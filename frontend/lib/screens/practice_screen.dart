@@ -5,10 +5,12 @@ import '../widgets/language_selector.dart';
 import '../screens/home_screen.dart';
 import '../services/api_service.dart';
 import '../services/speech_service.dart';
+import '../services/tts_service.dart';
 
 enum ChatMode { text, voice }
 
-final chatModeProvider = StateProvider<ChatMode>((ref) => ChatMode.text);
+final voiceInputEnabledProvider = StateProvider<bool>((ref) => false);
+final voiceOutputEnabledProvider = StateProvider<bool>((ref) => false);
 final chatMessagesProvider = StateProvider<List<ChatMessage>>((ref) => []);
 
 class ChatMessage {
@@ -34,118 +36,146 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final SpeechService _speechService = SpeechService();
+  final TtsService _ttsService = TtsService();
+  bool _isListening = false;
+  bool _isSpeaking = false;
 
   @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
     _speechService.dispose();
+    _ttsService.stop();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedLanguage = ref.watch(selectedLanguageProvider);
-    final chatMode = ref.watch(chatModeProvider);
+    final voiceInputEnabled = ref.watch(voiceInputEnabledProvider);
+    final voiceOutputEnabled = ref.watch(voiceOutputEnabledProvider);
     final messages = ref.watch(chatMessagesProvider);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${selectedLanguage?.flag} AI Sohbet'),
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
+        title: const Text('Dil Pratik - Konuşma'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
-            icon: Icon(chatMode == ChatMode.text ? Icons.mic : Icons.keyboard),
-            onPressed: () {
-              final newMode = chatMode == ChatMode.text ? ChatMode.voice : ChatMode.text;
-              ref.read(chatModeProvider.notifier).state = newMode;
-            },
+            icon: const Icon(Icons.home),
+            onPressed: () => Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
+            ),
           ),
         ],
       ),
       body: Column(
-        children: [
-          // Language Selector
-          Container(            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: Colors.green.withValues(alpha: 0.1),
-              border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
+        children: [          // Language selector
+          Container(
+            padding: const EdgeInsets.all(16.0),
+            child: LanguageSelector(
+              selectedLanguage: selectedLanguage,
+              onLanguageSelected: (language) {
+                ref.read(selectedLanguageProvider.notifier).state = language;
+              },
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          
+          // Voice controls
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Text(
-                  'Pratik yapmak istediğiniz dili seçin:',
-                  style: Theme.of(context).textTheme.titleSmall,
+                Row(
+                  children: [
+                    Switch(
+                      value: voiceInputEnabled,
+                      onChanged: (value) {
+                        ref.read(voiceInputEnabledProvider.notifier).state = value;
+                        if (!value && _isListening) {
+                          _stopVoiceRecording();
+                        }
+                      },
+                    ),
+                    const Text('Ses Girişi'),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                LanguageSelector(
-                  selectedLanguage: selectedLanguage,
-                  onLanguageSelected: (language) {
-                    ref.read(selectedLanguageProvider.notifier).state = language;
-                  },
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  chatMode == ChatMode.text 
-                    ? '💬 Mesaj modu aktif' 
-                    : '🎤 Sesli mod aktif',
-                  style: Theme.of(context).textTheme.bodySmall,
+                Row(
+                  children: [
+                    Switch(
+                      value: voiceOutputEnabled,
+                      onChanged: (value) {
+                        ref.read(voiceOutputEnabledProvider.notifier).state = value;
+                        if (!value && _isSpeaking) {
+                          _ttsService.stop();
+                          setState(() {
+                            _isSpeaking = false;
+                          });
+                        }
+                      },
+                    ),
+                    const Text('Ses Çıkışı'),
+                  ],
                 ),
               ],
             ),
           ),
-          // Chat Messages
+          
+          const Divider(),
+          
+          // Chat messages
           Expanded(
-            child: messages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 64,
-                          color: Colors.grey.shade400,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'AI ile ${selectedLanguage?.name ?? "dil"} pratiği yapmaya başlayın!',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            color: Colors.grey.shade600,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Sorularınızı sorun ve hatalarınızdan öğrenin.',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey.shade500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) {
-                      final message = messages[index];
-                      return _buildMessageBubble(message);
-                    },
-                  ),
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.all(16.0),
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final message = messages[index];
+                return _buildMessageBubble(message);
+              },
+            ),
           ),
-          // Input Area
+          
+          // Input area
           Container(
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+              color: Theme.of(context).colorScheme.surface,
+              border: Border(
+                top: BorderSide(
+                  color: Theme.of(context).colorScheme.outline,
+                  width: 1.0,
+                ),
+              ),
             ),
-            child: chatMode == ChatMode.text 
-                ? _buildTextInput()
-                : _buildVoiceInput(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: const InputDecoration(
+                      hintText: 'Mesajınızı yazın...',
+                      border: OutlineInputBorder(),
+                    ),
+                    onSubmitted: (_) => _sendMessage(),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (voiceInputEnabled)
+                  IconButton(
+                    icon: Icon(
+                      _isListening ? Icons.mic : Icons.mic_none,
+                      color: _isListening ? Colors.red : null,
+                    ),
+                    onPressed: _isListening ? _stopVoiceRecording : _startVoiceRecording,
+                  ),
+                IconButton(
+                  icon: const Icon(Icons.send),
+                  onPressed: _sendMessage,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -153,145 +183,215 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   }
 
   Widget _buildMessageBubble(ChatMessage message) {
-    return Align(
-      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4.0),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-        decoration: BoxDecoration(
-          color: message.isUser ? Colors.blue : Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(18.0),
-        ),
-        child: Text(
-          message.text,
-          style: TextStyle(
-            color: message.isUser ? Colors.white : Colors.black87,
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment:
+            message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+            decoration: BoxDecoration(
+              color: message.isUser
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.secondary,
+              borderRadius: BorderRadius.circular(20.0),
+            ),
+            child: Text(
+              message.text,
+              style: TextStyle(
+                color: message.isUser
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.onSecondary,
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildTextInput() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _messageController,
-            decoration: InputDecoration(
-              hintText: 'Mesajınızı yazın...',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(25.0),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 10.0,
-              ),
-            ),
-            onSubmitted: (_) => _sendMessage(),
-          ),
-        ),
-        const SizedBox(width: 8),
-        FloatingActionButton(
-          mini: true,
-          onPressed: _sendMessage,
-          backgroundColor: Colors.green,
-          child: const Icon(Icons.send, color: Colors.white),
-        ),
-      ],
-    );
-  }
-  Widget _buildVoiceInput() {
-    final isListening = _speechService.isListening;
-    
-    return Column(
-      children: [
-        Text(
-          isListening 
-            ? 'Dinleniyor... Konuşmayı bitirdikten sonra bekleyin'
-            : 'Konuşmaya başlamak için mikrofona basın',
-          style: Theme.of(context).textTheme.bodyMedium,
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 16),
-        FloatingActionButton.large(
-          onPressed: _speechService.isSupported 
-            ? (isListening ? _stopVoiceRecording : _startVoiceRecording)
-            : null,
-          backgroundColor: isListening ? Colors.red : Colors.blue,
-          child: Icon(
-            isListening ? Icons.stop : Icons.mic, 
-            color: Colors.white, 
-            size: 32
-          ),
-        ),
-        if (!_speechService.isSupported) ...[
-          const SizedBox(height: 8),
-          Text(
-            'Sesli kayıt bu tarayıcıda desteklenmiyor',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Colors.red,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ],
-    );
-  }
   void _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
-    final selectedLanguage = ref.read(selectedLanguageProvider);
-    if (selectedLanguage == null) return;
-
-    final messages = ref.read(chatMessagesProvider);
-    final newMessages = [
-      ...messages,
-      ChatMessage(text: text, isUser: true, timestamp: DateTime.now()),
-    ];
+    // Add user message
+    final userMessage = ChatMessage(
+      text: text,
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
     
-    ref.read(chatMessagesProvider.notifier).state = newMessages;
+    ref.read(chatMessagesProvider.notifier).state = [
+      ...ref.read(chatMessagesProvider),
+      userMessage,
+    ];
+
     _messageController.clear();
+    _scrollToBottom();
 
     try {
-      // Call real AI API
-      final apiService = ApiService();
-      final response = await apiService.chatWithAI(
-        message: text,
-        language: selectedLanguage.code,
-        level: 'A1', // TODO: Get from user level
-        userId: 'current-user', // TODO: Get from auth state
+      // Get AI response
+      final selectedLanguage = ref.read(selectedLanguageProvider);
+      final response = await ApiService.getChatResponse(text, selectedLanguage);
+      
+      // Add AI response
+      final aiMessage = ChatMessage(
+        text: response,
+        isUser: false,
+        timestamp: DateTime.now(),
       );
-
-      if (response['success'] == true) {
-        final aiResponse = response['response'] as String;
-        final updatedMessages = [
-          ...ref.read(chatMessagesProvider),
-          ChatMessage(text: aiResponse, isUser: false, timestamp: DateTime.now()),
-        ];
-        ref.read(chatMessagesProvider.notifier).state = updatedMessages;
-      } else {
-        // Fallback to mock response if API fails
-        final aiResponse = _generateAIResponse(text);
-        final updatedMessages = [
-          ...ref.read(chatMessagesProvider),
-          ChatMessage(text: aiResponse, isUser: false, timestamp: DateTime.now()),
-        ];
-        ref.read(chatMessagesProvider.notifier).state = updatedMessages;
-      }    } catch (e) {
-      // Fallback to mock response on error
-      // Error: $e (removed debug print for production)
-      final aiResponse = _generateAIResponse(text);
-      final updatedMessages = [
+      
+      ref.read(chatMessagesProvider.notifier).state = [
         ...ref.read(chatMessagesProvider),
-        ChatMessage(text: aiResponse, isUser: false, timestamp: DateTime.now()),
+        aiMessage,
       ];
-      ref.read(chatMessagesProvider.notifier).state = updatedMessages;
+
+      _scrollToBottom();
+
+      // Speak the response if voice output is enabled
+      final voiceOutputEnabled = ref.read(voiceOutputEnabledProvider);
+      if (voiceOutputEnabled) {
+        await _speakText(response);
+      }
+    } catch (e) {
+      _showErrorSnackBar('Mesaj gönderilirken hata oluştu: $e');
     }
-    
-    // Scroll to bottom
-    Future.delayed(const Duration(milliseconds: 100), () {
+  }
+  void _startVoiceRecording() async {
+    try {
+      // Check if speech recognition is available
+      if (!_speechService.isSupported) {
+        _showErrorSnackBar(
+          'Ses tanıma bu cihazda desteklenmiyor.',
+          action: SnackBarAction(
+            label: 'Tamam',
+            onPressed: () {},
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _isListening = true;
+      });
+
+      final selectedLanguage = ref.read(selectedLanguageProvider);
+      _speechService.startListening(
+        language: selectedLanguage?.code ?? 'tr-TR',        onResult: (result) {
+          print('📝 PracticeScreen received speech result: "$result"'); // Debug log
+          if (result.isNotEmpty) {
+            _messageController.text = result;
+            // Automatically send the message if it's not empty
+            if (result.trim().isNotEmpty) {
+              _sendMessage();
+            }
+          }
+          setState(() {
+            _isListening = false;
+          });
+        },        onError: (error) {
+          print('❌ PracticeScreen received speech error: $error'); // Debug log
+          _showErrorSnackBar(
+            'Ses tanıma hatası: $error',
+            action: SnackBarAction(
+              label: 'Tekrar Dene',
+              onPressed: _startVoiceRecording,
+            ),
+          );
+          setState(() {
+            _isListening = false;
+          });
+        },
+      );
+    } catch (e) {
+      _showErrorSnackBar(
+        'Ses tanıma hatası: ${e.toString()}',
+        action: SnackBarAction(
+          label: 'Tekrar Dene',
+          onPressed: _startVoiceRecording,
+        ),
+      );
+      setState(() {
+        _isListening = false;
+      });
+    }
+  }
+  void _stopVoiceRecording() async {
+    try {
+      _speechService.stopListening();
+    } catch (e) {
+      _showErrorSnackBar('Ses kaydı durdurulurken hata oluştu: $e');
+    } finally {
+      setState(() {
+        _isListening = false;
+      });
+    }
+  }
+  Future<void> _speakText(String text) async {
+    try {
+      // Check if TTS is available
+      if (!_ttsService.isSupported) {
+        _showErrorSnackBar(
+          'Sesli okuma bu cihazda desteklenmiyor.',
+          action: SnackBarAction(
+            label: 'Tamam',
+            onPressed: () {},
+          ),
+        );
+        return;
+      }
+
+      setState(() {
+        _isSpeaking = true;
+      });
+
+      final selectedLanguage = ref.read(selectedLanguageProvider);
+      _ttsService.speak(
+        text: text,
+        language: selectedLanguage?.code ?? 'tr-TR',
+        onStart: () {
+          setState(() {
+            _isSpeaking = true;
+          });
+        },
+        onEnd: () {
+          setState(() {
+            _isSpeaking = false;
+          });
+        },
+        onError: (error) {
+          _showErrorSnackBar(
+            'Sesli okuma hatası: $error',
+            action: SnackBarAction(
+              label: 'Tekrar Dene',
+              onPressed: () => _speakText(text),
+            ),
+          );
+          setState(() {
+            _isSpeaking = false;
+          });
+        },
+      );
+    } catch (e) {
+      _showErrorSnackBar(
+        'Sesli okuma hatası: ${e.toString()}',
+        action: SnackBarAction(
+          label: 'Tekrar Dene',
+          onPressed: () => _speakText(text),
+        ),
+      );
+      setState(() {
+        _isSpeaking = false;
+      });
+    }
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -301,44 +401,15 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       }
     });
   }
-  void _startVoiceRecording() {
-    final selectedLanguage = ref.read(selectedLanguageProvider);
-    if (selectedLanguage == null) return;
 
-    setState(() {}); // Trigger rebuild for UI update
-
-    _speechService.startListening(
-      language: selectedLanguage.code,
-      onResult: (transcript) {
-        if (transcript.trim().isNotEmpty) {
-          _messageController.text = transcript;
-          _sendMessage();
-        }
-        setState(() {}); // Update UI
-      },
-      onError: (error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ses tanıma hatası: $error')),
-        );
-        setState(() {}); // Update UI
-      },
+  void _showErrorSnackBar(String message, {SnackBarAction? action}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        action: action,
+        backgroundColor: Theme.of(context).colorScheme.error,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
-  }
-
-  void _stopVoiceRecording() {
-    _speechService.stopListening();
-    setState(() {}); // Update UI
-  }
-
-  String _generateAIResponse(String userMessage) {
-    // TODO: Replace with real AI integration
-    final responses = [
-      'Harika! Bu konuda daha fazla pratik yapmak ister misiniz?',
-      'Çok güzel bir cümle kurmuşsunuz. Devam edin!',
-      'Bu konuyu daha iyi anlamak için bir örnek verebilir misiniz?',
-      'Mükemmel! Şimdi bu kelimeyi farklı bir cümlede kullanmayı deneyin.',
-      'İyi bir başlangıç! Gramer kurallarına dikkat ederek tekrar deneyin.',
-    ];
-    return responses[DateTime.now().millisecond % responses.length];
   }
 }

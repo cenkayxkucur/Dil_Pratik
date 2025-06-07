@@ -38,39 +38,113 @@ class SpeechServicePlatform {
 
     try {
       // Create SpeechRecognition instance
+      dynamic speechRecognition;
       if (js.context.hasProperty('SpeechRecognition')) {
-        _recognition = js.context.callMethod('eval', ['new SpeechRecognition()']);
+        speechRecognition = js.context['SpeechRecognition'];
       } else if (js.context.hasProperty('webkitSpeechRecognition')) {
-        _recognition = js.context.callMethod('eval', ['new webkitSpeechRecognition()']);
+        speechRecognition = js.context['webkitSpeechRecognition'];
+      } else {
+        onError?.call('SpeechRecognition not available in this browser');
+        return;
       }
 
+      _recognition = js.JsObject(speechRecognition, []);
+
       if (_recognition != null) {
-        // Set properties
+        // Set properties with safety checks
         _recognition['continuous'] = false;
         _recognition['interimResults'] = false;
         _recognition['lang'] = _getLanguageCode(language);
+        _recognition['maxAlternatives'] = 1;
 
         // Set event handlers
         _recognition['onresult'] = js.allowInterop((event) {
+          print('🎤 Speech recognition onresult triggered!'); // Debug log
           try {
+            // More robust event handling
+            if (event == null) {
+              print('Speech recognition event is null'); // Debug log
+              _onError?.call('Speech recognition event is null');
+              return;
+            }
+            
             final results = event['results'];
-            if (results != null && results['length'] > 0) {
-              final lastResult = results[results['length'] - 1];
-              if (lastResult['isFinal'] == true && lastResult['length'] > 0) {
-                final transcript = lastResult[0]['transcript'];
-                if (transcript != null && transcript.toString().trim().isNotEmpty) {
-                  _onResult?.call(transcript.toString().trim());
+            print('Results: $results'); // Debug log
+            
+            if (results == null) {
+              print('Speech recognition results are null'); // Debug log
+              _onError?.call('Speech recognition results are null');
+              return;
+            }
+            
+            final length = results['length'];
+            print('Results length: $length'); // Debug log
+            
+            if (length == null || length == 0) {
+              print('No results yet or length is 0'); // Debug log
+              return; // No results yet
+            }
+            
+            final lastResult = results[length - 1];
+            print('Last result: $lastResult'); // Debug log
+            
+            if (lastResult == null) {
+              print('Last result is null'); // Debug log
+              return;
+            }
+            
+            final isFinal = lastResult['isFinal'];
+            print('Is final: $isFinal'); // Debug log
+            
+            if (isFinal == true) {
+              final resultLength = lastResult['length'];
+              print('Result length: $resultLength'); // Debug log
+              
+              if (resultLength != null && resultLength > 0) {
+                final firstAlternative = lastResult[0];
+                print('First alternative: $firstAlternative'); // Debug log
+                
+                if (firstAlternative != null) {
+                  final transcript = firstAlternative['transcript'];
+                  print('Transcript: $transcript'); // Debug log
+                  
+                  if (transcript != null) {
+                    final transcriptText = transcript.toString().trim();
+                    print('Final transcript text: $transcriptText'); // Debug log
+                    
+                    if (transcriptText.isNotEmpty) {
+                      print('🎯 Calling onResult with: "$transcriptText"'); // Debug log
+                      _onResult?.call(transcriptText);
+                    } else {
+                      print('Transcript text is empty after trim'); // Debug log
+                    }
+                  } else {
+                    print('Transcript is null'); // Debug log
+                  }
+                } else {
+                  print('First alternative is null'); // Debug log
                 }
+              } else {
+                print('Result length is null or 0'); // Debug log
               }
+            } else {
+              print('Result is not final yet'); // Debug log
             }
           } catch (e) {
+            print('Error in speech recognition: $e'); // Debug log
             _onError?.call('Error processing speech result: $e');
           }
         });
 
         _recognition['onerror'] = js.allowInterop((event) {
-          final error = event['error'] ?? 'Unknown error';
-          _onError?.call('Speech recognition error: $error');
+          try {
+            final error = event != null && event['error'] != null 
+                ? event['error'].toString() 
+                : 'Unknown speech recognition error';
+            _onError?.call('Speech recognition error: $error');
+          } catch (e) {
+            _onError?.call('Speech recognition error handler failed: $e');
+          }
           _isListening = false;
         });
 

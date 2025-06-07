@@ -14,12 +14,14 @@ Yapay zeka destekli Türkçe dil öğrenme platformu. Google Gemini API kullanar
 ## 🛠️ Teknoloji Stack
 
 ### Backend
+
 - **FastAPI** - Modern Python web framework
 - **Google Gemini AI** - Dil işleme ve AI yanıtları
 - **PostgreSQL** - Veritabanı
 - **SQLAlchemy** - ORM
 
-### Frontend  
+### Frontend
+
 - **Flutter** - Cross-platform UI framework
 - **Provider** - State management
 - **Web Speech API** - Sesli etkileşim
@@ -27,6 +29,7 @@ Yapay zeka destekli Türkçe dil öğrenme platformu. Google Gemini API kullanar
 ## 📦 Kurulum
 
 ### Gereksinimler
+
 - Python 3.8+
 - Flutter 3.0+
 - PostgreSQL
@@ -40,12 +43,14 @@ pip install -r requirements.txt
 ```
 
 `.env` dosyası oluşturun:
+
 ```env
 GEMINI_API_KEY=your_gemini_api_key_here
 DATABASE_URL=postgresql://username:password@localhost/dil_pratik
 ```
 
 Veritabanını başlatın:
+
 ```bash
 python create_tables.py
 python main.py
@@ -62,24 +67,28 @@ flutter run -d web
 ## 🚀 Çalıştırma
 
 1. **Backend'i başlatın**:
+
 ```bash
 cd backend
 python main.py
 ```
+
 Backend http://localhost:8000 adresinde çalışacak.
 
 2. **Frontend'i başlatın**:
+
 ```bash
-cd frontend  
+cd frontend
 flutter run -d web
 ```
+
 Frontend http://localhost:3000 adresinde çalışacak.
 
 ## 📱 Kullanım
 
 1. **Ana sayfa** - Dil seviyenizi seçin
 2. **Pratik ekranı** - Sesli konuşma pratiği yapın
-3. **Ders ekranı** - Gramer kurallarını öğrenin  
+3. **Ders ekranı** - Gramer kurallarını öğrenin
 4. **İlerleme takibi** - Gelişiminizi görüntüleyin
 
 ## 🔧 API Endpoints
@@ -111,6 +120,7 @@ Bu proje MIT lisansı altında lisanslanmıştır.
 ## 📞 İletişim
 
 Proje hakkında sorularınız için issue oluşturabilirsiniz.
+
 - 🎯 Kişiselleştirilmiş alıştırmalar
 - 🌍 Çoklu dil desteği
 
@@ -151,12 +161,14 @@ flutter pub get
 ### Çalıştırma
 
 1. Backend:
+
 ```bash
 cd backend
 uvicorn main:app --reload
 ```
 
 2. Frontend:
+
 ```bash
 cd frontend
 flutter run
@@ -176,4 +188,5 @@ flutter run
 │   ├── tests/            # Backend testleri
 │   └── alembic/          # Veritabanı migrasyonları
 │
-└── docs/                 # Dokümantasyon 
+└── docs/                 # Dokümantasyon
+```
