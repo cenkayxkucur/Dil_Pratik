@@ -108,6 +108,27 @@ async def get_lessons(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/public/lessons", response_model=List[LessonResponse])
+async def get_public_lessons(
+    skip: int = 0,
+    limit: int = 10,
+    language: Optional[str] = None,
+    difficulty: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """Public endpoint to get lessons without authentication"""
+    try:
+        return await LessonService.get_public_lessons(
+            db,
+            skip=skip,
+            limit=limit,
+            language=language,
+            difficulty=difficulty
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @router.get("/lessons/{lesson_id}", response_model=LessonResponse)
 async def get_lesson(
     lesson_id: int,

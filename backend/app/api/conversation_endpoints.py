@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import Dict, Optional
-from app.services.ai_service import ai_service
-from app.database import get_db
-from app.models import PracticeSession, User
+from ..services.ai_service import ai_service
+from ..database import get_db
+from ..models import PracticeSession, User
 from datetime import datetime
 
 router = APIRouter()

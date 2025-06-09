@@ -78,3 +78,30 @@ class LessonService:
             createdAt=lesson.created_at.isoformat(),
             updatedAt=lesson.updated_at.isoformat() if lesson.updated_at else None
         )
+    
+    @staticmethod
+    async def get_public_lessons(db: Session, skip: int = 0, limit: int = 10, 
+                               language: Optional[str] = None, difficulty: Optional[str] = None) -> List[LessonResponse]:
+        """Get lessons without user authentication - public access"""
+        query = db.query(LessonModel)
+        
+        if language:
+            query = query.filter(LessonModel.language == language)
+        if difficulty:
+            query = query.filter(LessonModel.difficulty == difficulty)
+        
+        lessons = query.offset(skip).limit(limit).all()
+        
+        return [
+            LessonResponse(
+                id=lesson.id,
+                title=lesson.title,
+                description=lesson.description,
+                language=lesson.language,
+                difficulty=lesson.difficulty,
+                content=lesson.content,
+                createdAt=lesson.created_at.isoformat(),
+                updatedAt=lesson.updated_at.isoformat() if lesson.updated_at else None
+            )
+            for lesson in lessons
+        ]

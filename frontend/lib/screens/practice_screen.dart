@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../widgets/language_selector.dart';
+import '../widgets/level_selector.dart';
+import '../models/language.dart';
 import '../screens/home_screen.dart';
 import '../services/api_service.dart';
 import '../services/speech_service.dart';
@@ -12,6 +14,7 @@ enum ChatMode { text, voice }
 final voiceInputEnabledProvider = StateProvider<bool>((ref) => false);
 final voiceOutputEnabledProvider = StateProvider<bool>((ref) => false);
 final chatMessagesProvider = StateProvider<List<ChatMessage>>((ref) => []);
+final selectedLevelProvider = StateProvider<LanguageLevel>((ref) => LanguageLevel.A1);
 
 class ChatMessage {
   final String text;
@@ -48,10 +51,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     _ttsService.stop();
     super.dispose();
   }
-
   @override
   Widget build(BuildContext context) {
     final selectedLanguage = ref.watch(selectedLanguageProvider);
+    final selectedLevel = ref.watch(selectedLevelProvider);
     final voiceInputEnabled = ref.watch(voiceInputEnabledProvider);
     final voiceOutputEnabled = ref.watch(voiceOutputEnabledProvider);
     final messages = ref.watch(chatMessagesProvider);
@@ -70,14 +73,37 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         ],
       ),
       body: Column(
-        children: [          // Language selector
+        children: [
+          // Language selector
           Container(
             padding: const EdgeInsets.all(16.0),
-            child: LanguageSelector(
-              selectedLanguage: selectedLanguage,
-              onLanguageSelected: (language) {
-                ref.read(selectedLanguageProvider.notifier).state = language;
-              },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Dil Seçimi:',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                LanguageSelector(
+                  selectedLanguage: selectedLanguage,
+                  onLanguageSelected: (language) {
+                    ref.read(selectedLanguageProvider.notifier).state = language;
+                  },
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Seviye Seçimi:',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                LevelSelector(
+                  selectedLevel: selectedLevel,
+                  onLevelSelected: (level) {
+                    ref.read(selectedLevelProvider.notifier).state = level;
+                  },
+                ),
+              ],
             ),
           ),
           
