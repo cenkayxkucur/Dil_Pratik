@@ -7,7 +7,6 @@ from app.api.auth_endpoints import router as auth_router
 from app.api.ai_endpoints import router as ai_router
 from app.database import engine
 from app.utils.database import Base
-from app.utils.database import Base
 
 # Veritabanı tablolarını oluştur
 Base.metadata.create_all(bind=engine)

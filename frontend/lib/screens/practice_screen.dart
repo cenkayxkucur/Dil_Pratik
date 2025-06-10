@@ -15,6 +15,8 @@ final voiceInputEnabledProvider = StateProvider<bool>((ref) => false);
 final voiceOutputEnabledProvider = StateProvider<bool>((ref) => false);
 final chatMessagesProvider = StateProvider<List<ChatMessage>>((ref) => []);
 final selectedLevelProvider = StateProvider<LanguageLevel>((ref) => LanguageLevel.A1);
+final selectedLanguageProvider = StateProvider<Language?>((ref) => supportedLanguages.first);
+final communicationLanguageProvider = StateProvider<Language?>((ref) => supportedLanguages.first);
 
 class ChatMessage {
   final String text;
@@ -50,11 +52,11 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     _speechService.dispose();
     _ttsService.stop();
     super.dispose();
-  }
-  @override
+  }  @override
   Widget build(BuildContext context) {
     final selectedLanguage = ref.watch(selectedLanguageProvider);
     final selectedLevel = ref.watch(selectedLevelProvider);
+    final communicationLanguage = ref.watch(communicationLanguageProvider);
     final voiceInputEnabled = ref.watch(voiceInputEnabledProvider);
     final voiceOutputEnabled = ref.watch(voiceOutputEnabledProvider);
     final messages = ref.watch(chatMessagesProvider);
@@ -96,11 +98,22 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                   'Seviye Seçimi:',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
-                const SizedBox(height: 8),
-                LevelSelector(
+                const SizedBox(height: 8),                LevelSelector(
                   selectedLevel: selectedLevel,
                   onLevelSelected: (level) {
                     ref.read(selectedLevelProvider.notifier).state = level;
+                  },
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'İletişim Dili:',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                LanguageSelector(
+                  selectedLanguage: communicationLanguage,
+                  onLanguageSelected: (language) {
+                    ref.read(communicationLanguageProvider.notifier).state = language;
                   },
                 ),
               ],
@@ -257,12 +270,19 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     ];
 
     _messageController.clear();
-    _scrollToBottom();
-
-    try {
-      // Get AI response
+    _scrollToBottom();    try {
+      // Get current selections
       final selectedLanguage = ref.read(selectedLanguageProvider);
-      final response = await ApiService.getChatResponse(text, selectedLanguage);
+      final selectedLevel = ref.read(selectedLevelProvider);
+      final communicationLanguage = ref.read(communicationLanguageProvider);
+      
+      // Get AI response with all parameters
+      final response = await ApiService.getChatResponse(
+        text, 
+        selectedLanguage,
+        level: selectedLevel,
+        communicationLanguage: communicationLanguage,
+      );
       
       // Add AI response
       final aiMessage = ChatMessage(

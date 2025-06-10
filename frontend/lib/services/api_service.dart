@@ -138,33 +138,37 @@ class ApiService {
       throw _handleError(e);
     }
   }
-
   // AI Chat endpoints
   Future<Map<String, dynamic>> chatWithAI({
     required String message,
     required String language,
     required String level,
     required String userId,
+    String? communicationLanguage,
   }) async {
     try {
-      final response = await _dio.post(
-        '/ai/chat',
-        data: {
-          'message': message,
-          'language': language,
-          'level': level,
-          'user_id': userId,
-        },
-      );
+      final data = {
+        'message': message,
+        'language': language,
+        'level': level,
+        'user_id': userId,
+      };
+      
+      // Add communication language if provided
+      if (communicationLanguage != null) {
+        data['communication_language'] = communicationLanguage;
+      }
+      
+      final response = await _dio.post('/ai/chat', data: data);
       return response.data;
     } catch (e) {
       throw _handleError(e);
     }
   }
-
   Future<Map<String, dynamic>> analyzeGrammar({
     required String text,
     required String language,
+    required String level,
   }) async {
     try {
       final response = await _dio.post(
@@ -172,6 +176,7 @@ class ApiService {
         data: {
           'text': text,
           'language': language,
+          'level': level,
         },
       );
       return response.data;
@@ -207,8 +212,7 @@ class ApiService {
     } catch (e) {
       throw _handleError(e);
     }
-  }
-  Future<Map<String, dynamic>> clearConversationHistory(String userId) async {
+  }  Future<Map<String, dynamic>> clearConversationHistory(String userId) async {
     try {
       final response = await _dio.delete('/ai/conversation-history/$userId');
       return response.data;
@@ -217,15 +221,21 @@ class ApiService {
     }
   }
 
-  // New method to support the practice screen
-  static Future<String> getChatResponse(String message, Language? selectedLanguage) async {
+  // New method to support the practice screen with enhanced parameters
+  static Future<String> getChatResponse(
+    String message, 
+    Language? selectedLanguage, {
+    LanguageLevel? level,
+    Language? communicationLanguage,
+  }) async {
     try {
       final apiService = ApiService();
       final response = await apiService.chatWithAI(
         message: message,
         language: selectedLanguage?.code ?? 'turkish',
-        level: 'A1',
+        level: level?.name ?? 'A1',
         userId: 'current-user',
+        communicationLanguage: communicationLanguage?.code,
       );
 
       if (response['success'] == true) {

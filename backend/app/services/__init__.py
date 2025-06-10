@@ -7,5 +7,6 @@ from .ai_service import ai_service
 
 __all__ = [
     "authenticate_user", "create_access_token", "get_current_user",
-    "UserService", "LessonService", "ProgressService", "ai_service"
+    "UserService", "LessonService", "ProgressService",
+    "ai_service"
 ]

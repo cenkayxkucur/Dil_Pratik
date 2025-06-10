@@ -12,6 +12,7 @@ class ChatRequest(BaseModel):
     language: str
     level: str
     user_id: str
+    communication_language: Optional[str] = None
 
 class ChatResponse(BaseModel):
     response: str
@@ -20,6 +21,7 @@ class ChatResponse(BaseModel):
 class GrammarAnalysisRequest(BaseModel):
     text: str
     language: str
+    level: str
 
 class PracticeContentRequest(BaseModel):
     topic: str
@@ -34,7 +36,8 @@ async def chat_with_ai(request: ChatRequest, db: Session = Depends(get_db)):
             user_id=request.user_id,
             message=request.message,
             language=request.language,
-            level=request.level
+            level=request.level,
+            communication_language=request.communication_language
         )
         
         return ChatResponse(response=response, success=True)
@@ -49,7 +52,8 @@ async def analyze_grammar(request: GrammarAnalysisRequest, db: Session = Depends
     try:
         analysis = ai_service.analyze_grammar(
             text=request.text,
-            language=request.language
+            language=request.language,
+            level=request.level
         )
         
         return {"success": True, "analysis": analysis}
