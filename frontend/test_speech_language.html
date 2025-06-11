@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Speech Recognition Languages</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      button {
+        padding: 10px 20px;
+        margin: 10px;
+        border: none;
+        border-radius: 4px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      .listening {
+        background-color: #dc3545 !important;
+      }
+      .result {
+        margin: 10px 0;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🎤 Speech Recognition Language Test</h1>
+
+    <div class="test-section">
+      <h3>🇹🇷 Türkçe Test</h3>
+      <button id="turkishBtn" onclick="testLanguage('tr-TR', 'turkishResult')">
+        Türkçe Konuşma Testi
+      </button>
+      <div id="turkishResult" class="result">Henüz test edilmedi</div>
+    </div>
+
+    <div class="test-section">
+      <h3>🇺🇸 English Test</h3>
+      <button id="englishBtn" onclick="testLanguage('en-US', 'englishResult')">
+        English Speech Test
+      </button>
+      <div id="englishResult" class="result">Not tested yet</div>
+    </div>
+
+    <div class="test-section">
+      <h3>🇩🇪 German Test</h3>
+      <button id="germanBtn" onclick="testLanguage('de-DE', 'germanResult')">
+        Deutsch Sprach Test
+      </button>
+      <div id="germanResult" class="result">Noch nicht getestet</div>
+    </div>
+
+    <script>
+      let currentRecognition = null;
+
+      function testLanguage(langCode, resultId) {
+        const button = event.target;
+        const resultDiv = document.getElementById(resultId);
+
+        // Stop any existing recognition
+        if (currentRecognition) {
+          currentRecognition.stop();
+          currentRecognition = null;
+        }
+
+        // Check for speech recognition support
+        const SpeechRecognition =
+          window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          resultDiv.innerHTML = "❌ Tarayıcınız ses tanımayı desteklemiyor";
+          return;
+        }
+
+        // Create recognition instance
+        currentRecognition = new SpeechRecognition();
+        currentRecognition.continuous = false;
+        currentRecognition.interimResults = false;
+        currentRecognition.lang = langCode;
+        currentRecognition.maxAlternatives = 1;
+
+        // Update button state
+        button.classList.add("listening");
+        button.textContent = "🎤 Dinliyor...";
+        resultDiv.innerHTML = `🎤 ${langCode} dilinde konuşun...`;
+
+        // Handle results
+        currentRecognition.onresult = function (event) {
+          const result = event.results[0][0].transcript;
+          const confidence = event.results[0][0].confidence;
+
+          resultDiv.innerHTML = `
+                    <strong>✅ Tanınan Metin:</strong> "${result}"<br>
+                    <strong>🎯 Güven Oranı:</strong> ${(
+                      confidence * 100
+                    ).toFixed(1)}%<br>
+                    <strong>🌐 Dil:</strong> ${langCode}
+                `;
+
+          // Reset button
+          button.classList.remove("listening");
+          updateButtonText(langCode, button);
+          currentRecognition = null;
+        };
+
+        // Handle errors
+        currentRecognition.onerror = function (event) {
+          resultDiv.innerHTML = `❌ Hata: ${event.error}`;
+          button.classList.remove("listening");
+          updateButtonText(langCode, button);
+          currentRecognition = null;
+        };
+
+        // Handle end
+        currentRecognition.onend = function () {
+          button.classList.remove("listening");
+          updateButtonText(langCode, button);
+          currentRecognition = null;
+        };
+
+        // Start recognition
+        try {
+          currentRecognition.start();
+        } catch (error) {
+          resultDiv.innerHTML = `❌ Başlatma hatası: ${error.message}`;
+          button.classList.remove("listening");
+          updateButtonText(langCode, button);
+          currentRecognition = null;
+        }
+      }
+
+      function updateButtonText(langCode, button) {
+        const texts = {
+          "tr-TR": "Türkçe Konuşma Testi",
+          "en-US": "English Speech Test",
+          "de-DE": "Deutsch Sprach Test",
+        };
+        button.textContent = texts[langCode] || "Speech Test";
+      }
+
+      // Stop recognition when page unloads
+      window.addEventListener("beforeunload", function () {
+        if (currentRecognition) {
+          currentRecognition.stop();
+        }
+      });
+    </script>
+  </body>
+</html>

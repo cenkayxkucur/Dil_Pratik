@@ -88,8 +88,7 @@ class AIService:
             - content (lesson description)
             - vocabulary (5 key words with definitions)
             - exercises (3 fill-in-the-blank exercises)
-            - questions (2 conversation starter questions)
-            """
+            - questions (2 conversation starter questions)            """
             
             response = self.model.generate_content(prompt)
             return {
@@ -108,6 +107,13 @@ class AIService:
 
     def _create_system_prompt(self, language: str, level: str, communication_language: Optional[str] = None) -> str:
         """Create system prompt based on target language, level, and communication language"""
+        
+        # Language name mapping for clear instructions
+        language_names = {
+            'turkish': 'Turkish (Türkçe)',
+            'english': 'English',
+            'german': 'German (Deutsch)'
+        }
         
         # Base prompt based on target language and level
         language_instructions = {
@@ -139,18 +145,28 @@ class AIService:
         
         # Get base prompt
         base_prompt = language_instructions.get(language, {}).get(level, 
-            f"You are a language teacher helping students learn {language} at {level} level.")
-          # Add communication language instruction
+            f"You are a language teacher helping students learn {language} at {level} level.")        # Add communication language instruction
+        comm_lang_name = language_names.get(communication_language, communication_language)
+        target_lang_name = language_names.get(language, language)
+        
         if communication_language and communication_language != language:
             communication_instruction = f"""
-            
-            IMPORTANT: The user will communicate with you in {communication_language}, but you should respond in {language} to help them learn {language}. 
-            Understand their {communication_language} messages and respond appropriately in {language} at {level} level.
+
+CRITICAL COMMUNICATION RULES:
+1. ONLY accept and respond to messages written in {comm_lang_name}.
+2. If the user writes in any other language (including {target_lang_name}), politely ask them to communicate ONLY in {comm_lang_name}.
+3. You should respond in {target_lang_name} to help them learn {target_lang_name}.
+4. Understand their {comm_lang_name} messages and respond appropriately in {target_lang_name} at {level} level.
+5. If they try to use a different language, respond: "Please communicate with me in {comm_lang_name} only. I will respond in {target_lang_name} to help you learn."
             """
         else:
             communication_instruction = f"""
-            
-            IMPORTANT: The user will communicate with you in {language}. This is an immersive {language} learning experience.
+
+CRITICAL COMMUNICATION RULES:
+1. ONLY accept and respond to messages written in {target_lang_name}.
+2. If the user writes in any other language, politely ask them to communicate ONLY in {target_lang_name}.
+3. This is an immersive {target_lang_name} learning experience - all communication should be in {target_lang_name}.
+4. If they try to use a different language, respond: "Please communicate with me in {target_lang_name} only for this immersive learning experience."
             """
         
         base_prompt += communication_instruction

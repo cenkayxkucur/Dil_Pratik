@@ -323,11 +323,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
       setState(() {
         _isListening = true;
-      });
-
-      final selectedLanguage = ref.read(selectedLanguageProvider);
+      });      final communicationLanguage = ref.read(communicationLanguageProvider);
       _speechService.startListening(
-        language: selectedLanguage?.code ?? 'tr-TR',        onResult: (result) {
+        language: communicationLanguage?.name ?? communicationLanguage?.code ?? 'tr',onResult: (result) {
           print('📝 PracticeScreen received speech result: "$result"'); // Debug log
           if (result.isNotEmpty) {
             _messageController.text = result;
@@ -393,12 +391,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
       setState(() {
         _isSpeaking = true;
-      });
-
-      final selectedLanguage = ref.read(selectedLanguageProvider);
+      });      final selectedLanguage = ref.read(selectedLanguageProvider);
       _ttsService.speak(
         text: text,
-        language: selectedLanguage?.code ?? 'tr-TR',
+        language: selectedLanguage?.name ?? selectedLanguage?.code ?? 'tr',
         onStart: () {
           setState(() {
             _isSpeaking = true;

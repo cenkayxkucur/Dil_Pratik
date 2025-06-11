@@ -136,17 +136,26 @@ class SpeechService {
       _isListening = false;
     }
   }
-
   String _getLanguageCode(String language) {
     switch (language.toLowerCase()) {
+      // Turkish variants
       case 'turkish':
       case 'türkçe':
+      case 'tr':
+      case 'tr-tr':
         return 'tr-TR';
+      // English variants  
       case 'english':
       case 'ingilizce':
+      case 'en':
+      case 'en-us':
         return 'en-US';
+      // German variants
       case 'german':
       case 'almanca':
+      case 'deutsch':
+      case 'de':
+      case 'de-de':
         return 'de-DE';
       default:
         return 'en-US';

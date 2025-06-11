@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Multi-Language TTS Test</title>
+    <meta charset="utf-8" />
+  </head>
+  <body>
+    <h1>Çok Dilli TTS Test</h1>
+
+    <div>
+      <h3>Türkçe Test:</h3>
+      <button onclick="speakTurkish()">Türkçe Konuş</button>
+      <p>Test metni: "Merhaba! Ben senin Türkçe öğrenme asistanınım."</p>
+    </div>
+
+    <div>
+      <h3>English Test:</h3>
+      <button onclick="speakEnglish()">Speak English</button>
+      <p>Test text: "Hello! I am your English learning assistant."</p>
+    </div>
+
+    <div>
+      <h3>Deutsch Test:</h3>
+      <button onclick="speakGerman()">Deutsch Sprechen</button>
+      <p>Test text: "Hallo! Ich bin dein Deutsch-Lernassistent."</p>
+    </div>
+
+    <div>
+      <h3>Dil Kodu Test:</h3>
+      <button onclick="testLanguageCodes()">Test Language Codes</button>
+      <p>Test different language code formats</p>
+    </div>
+
+    <script>
+      function getLanguageCode(language) {
+        switch (language.toLowerCase()) {
+          // Turkish variants
+          case "turkish":
+          case "türkçe":
+          case "tr":
+          case "tr-tr":
+            return "tr-TR";
+          // English variants
+          case "english":
+          case "ingilizce":
+          case "en":
+          case "en-us":
+            return "en-US";
+          // German variants
+          case "german":
+          case "almanca":
+          case "deutsch":
+          case "de":
+          case "de-de":
+            return "de-DE";
+          default:
+            return "en-US";
+        }
+      }
+
+      function speak(text, language) {
+        if ("speechSynthesis" in window) {
+          const utterance = new SpeechSynthesisUtterance();
+          utterance.text = text;
+          utterance.lang = getLanguageCode(language);
+          utterance.rate = 0.9;
+          utterance.pitch = 1.0;
+          utterance.volume = 1.0;
+
+          console.log(`Speaking: "${text}" in language: ${utterance.lang}`);
+
+          utterance.onstart = () => {
+            console.log("Speech started");
+          };
+
+          utterance.onend = () => {
+            console.log("Speech ended");
+          };
+
+          utterance.onerror = (event) => {
+            console.error("Speech error:", event);
+          };
+
+          speechSynthesis.speak(utterance);
+        } else {
+          alert("Text-to-Speech desteklenmiyor!");
+        }
+      }
+
+      function speakTurkish() {
+        speak("Merhaba! Ben senin Türkçe öğrenme asistanınım.", "tr");
+      }
+
+      function speakEnglish() {
+        speak("Hello! I am your English learning assistant.", "en");
+      }
+
+      function speakGerman() {
+        speak("Hallo! Ich bin dein Deutsch-Lernassistent.", "de");
+      }
+
+      function testLanguageCodes() {
+        console.log("Testing language code conversion:");
+        const testCodes = ["tr", "türkçe", "en", "english", "de", "deutsch"];
+        testCodes.forEach((code) => {
+          console.log(`${code} -> ${getLanguageCode(code)}`);
+        });
+
+        // Test each language
+        speak("Bu Türkçe bir test.", "tr");
+        setTimeout(() => speak("This is an English test.", "en"), 3000);
+        setTimeout(() => speak("Das ist ein deutscher Test.", "de"), 6000);
+      }
+
+      // Available voices check
+      function checkAvailableVoices() {
+        if ("speechSynthesis" in window) {
+          const voices = speechSynthesis.getVoices();
+          console.log("Available voices:");
+          voices.forEach((voice) => {
+            console.log(`- ${voice.name} (${voice.lang})`);
+          });
+        }
+      }
+
+      // Check voices when page loads
+      window.addEventListener("load", () => {
+        if ("speechSynthesis" in window) {
+          // Chrome requires this delay for voices to load
+          setTimeout(checkAvailableVoices, 100);
+          speechSynthesis.addEventListener(
+            "voiceschanged",
+            checkAvailableVoices
+          );
+        }
+      });
+    </script>
+  </body>
+</html>
