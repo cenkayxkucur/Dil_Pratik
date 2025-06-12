@@ -16,6 +16,9 @@ class AIService:
     def __init__(self):
         """Initialize the AI service with Gemini API"""
         self.api_key = os.getenv("GEMINI_API_KEY")
+        # Conversation history storage for each user
+        self.conversation_history = {}
+        
         if not self.api_key:
             logger.warning("⚠️ GEMINI_API_KEY not found in environment variables")
             self.model = None
@@ -35,11 +38,36 @@ class AIService:
             return "AI service is currently unavailable."
 
         try:
-            system_prompt = self._create_system_prompt(language, level, communication_language)
-            full_prompt = f"{system_prompt}\n\nUser message: {message}\n\nResponse:"
+            # Initialize conversation history for new users
+            if user_id not in self.conversation_history:
+                self.conversation_history[user_id] = []
             
-            response = self.model.generate_content(full_prompt)
-            return response.text if response.text else "I'm sorry, I couldn't generate a response."
+            # Get system prompt
+            system_prompt = self._create_system_prompt(language, level, communication_language)
+            
+            # Build conversation context with history
+            conversation_context = f"{system_prompt}\n\nConversation History:\n"
+            
+            # Add recent conversation history (last 10 messages to avoid token limits)
+            recent_history = self.conversation_history[user_id][-10:]
+            for msg in recent_history:
+                conversation_context += f"{msg['role']}: {msg['content']}\n"
+            
+            # Add current user message
+            conversation_context += f"\nUser: {message}\nAssistant:"
+            
+            response = self.model.generate_content(conversation_context)
+            ai_response = response.text if response.text else "I'm sorry, I couldn't generate a response."
+            
+            # Save conversation to history
+            self.conversation_history[user_id].append({"role": "User", "content": message})
+            self.conversation_history[user_id].append({"role": "Assistant", "content": ai_response})
+            
+            # Keep history manageable (max 50 messages)
+            if len(self.conversation_history[user_id]) > 50:
+                self.conversation_history[user_id] = self.conversation_history[user_id][-50:]
+            
+            return ai_response
             
         except Exception as e:
             logger.error(f"Error generating conversation response: {e}")
@@ -105,6 +133,33 @@ class AIService:
             logger.error(f"Error generating practice content: {e}")
             return {"error": "Practice content generation failed"}
 
+    def clear_conversation_history(self, user_id: str) -> bool:
+        """Clear conversation history for a specific user"""
+        try:
+            if user_id in self.conversation_history:
+                del self.conversation_history[user_id]
+                logger.info(f"Cleared conversation history for user: {user_id}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Error clearing conversation history: {e}")
+            return False
+    
+    def get_conversation_history(self, user_id: str) -> list:
+        """Get conversation history for a specific user"""
+        return self.conversation_history.get(user_id, [])
+    
+    def get_conversation_summary(self, user_id: str) -> dict:
+        """Get conversation summary for a specific user"""
+        history = self.conversation_history.get(user_id, [])
+        return {
+            "user_id": user_id,
+            "total_messages": len(history),
+            "user_messages": len([msg for msg in history if msg['role'] == 'User']),
+            "assistant_messages": len([msg for msg in history if msg['role'] == 'Assistant']),
+            "last_interaction": history[-1]['content'] if history else None
+        }
+
     def _create_system_prompt(self, language: str, level: str, communication_language: Optional[str] = None) -> str:
         """Create system prompt based on target language, level, and communication language"""
         
@@ -149,24 +204,24 @@ class AIService:
         comm_lang_name = language_names.get(communication_language, communication_language)
         target_lang_name = language_names.get(language, language)
         
-        if communication_language and communication_language != language:
-            communication_instruction = f"""
+        if communication_language and communication_language != language:            communication_instruction = f"""
 
-CRITICAL COMMUNICATION RULES:
-1. ONLY accept and respond to messages written in {comm_lang_name}.
-2. If the user writes in any other language (including {target_lang_name}), politely ask them to communicate ONLY in {comm_lang_name}.
-3. You should respond in {target_lang_name} to help them learn {target_lang_name}.
-4. Understand their {comm_lang_name} messages and respond appropriately in {target_lang_name} at {level} level.
-5. If they try to use a different language, respond: "Please communicate with me in {comm_lang_name} only. I will respond in {target_lang_name} to help you learn."
+COMMUNICATION LANGUAGE GUIDANCE:
+1. The user will primarily communicate with you in {comm_lang_name}.
+2. You should respond in {target_lang_name} to help them learn {target_lang_name}.
+3. If the user writes in {comm_lang_name}, engage naturally and respond in {target_lang_name} at {level} level.
+4. If the user accidentally writes in {target_lang_name} or another language, gently remind them: "I notice you're writing in a different language. For our cross-language learning, please communicate in {comm_lang_name} and I'll respond in {target_lang_name}."
+5. Focus on grammar corrections and language learning, not strict language policing.
+6. **IMPORTANT**: Do NOT just translate their message. You are a language teacher, not a translator. Engage in meaningful conversation, ask follow-up questions, provide examples, and create learning opportunities. Only provide translations when explicitly asked.
             """
-        else:
-            communication_instruction = f"""
+        else:            communication_instruction = f"""
 
-CRITICAL COMMUNICATION RULES:
-1. ONLY accept and respond to messages written in {target_lang_name}.
-2. If the user writes in any other language, politely ask them to communicate ONLY in {target_lang_name}.
-3. This is an immersive {target_lang_name} learning experience - all communication should be in {target_lang_name}.
-4. If they try to use a different language, respond: "Please communicate with me in {target_lang_name} only for this immersive learning experience."
+IMMERSIVE LANGUAGE LEARNING:
+1. The user will communicate with you in {target_lang_name} for immersive learning.
+2. If the user writes in {target_lang_name}, provide natural responses and grammar corrections.
+3. If the user writes in another language, gently guide them: "For immersive {target_lang_name} learning, please try to communicate in {target_lang_name}."
+4. Focus on helping them improve their {target_lang_name} skills through natural conversation.
+5. **IMPORTANT**: Do NOT just translate their message. You are a language teacher, not a translator. Engage in meaningful conversation, ask follow-up questions, provide examples, and create learning opportunities. Only provide translations when explicitly asked.
             """
         
         base_prompt += communication_instruction

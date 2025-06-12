@@ -6,6 +6,7 @@ import '../models/user.dart';
 import '../models/lesson.dart';
 import '../models/progress.dart';
 import '../models/language.dart';
+import 'user_session_service.dart';
 
 class ApiService {
   late final Dio _dio;
@@ -220,7 +221,6 @@ class ApiService {
       throw _handleError(e);
     }
   }
-
   // New method to support the practice screen with enhanced parameters
   static Future<String> getChatResponse(
     String message, 
@@ -234,7 +234,7 @@ class ApiService {
         message: message,
         language: selectedLanguage?.code ?? 'turkish',
         level: level?.name ?? 'A1',
-        userId: 'current-user',
+        userId: UserSessionService.getCurrentUserId(), // Uses auth user ID if authenticated, session ID if anonymous
         communicationLanguage: communicationLanguage?.code,
       );
 

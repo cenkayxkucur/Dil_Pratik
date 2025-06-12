@@ -8,6 +8,8 @@ import '../screens/home_screen.dart';
 import '../services/api_service.dart';
 import '../services/speech_service.dart';
 import '../services/tts_service.dart';
+import '../services/user_session_service.dart';
+import '../providers/auth_provider.dart';
 
 enum ChatMode { text, voice }
 
@@ -44,6 +46,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   final TtsService _ttsService = TtsService();
   bool _isListening = false;
   bool _isSpeaking = false;
+  @override
+  void initState() {
+    super.initState();
+    // Initialize UserSessionService with Riverpod reference
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UserSessionService.initialize(ref);
+    });
+  }
 
   @override
   void dispose() {
@@ -52,7 +62,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     _speechService.dispose();
     _ttsService.stop();
     super.dispose();
-  }  @override
+  }@override
   Widget build(BuildContext context) {
     final selectedLanguage = ref.watch(selectedLanguageProvider);
     final selectedLevel = ref.watch(selectedLevelProvider);
