@@ -229,5 +229,112 @@ IMMERSIVE LANGUAGE LEARNING:
         
         return base_prompt
 
+    def get_lesson_conversation_response(self, user_id: str, message: str, lesson_content: str, 
+                                       lesson_title: str, lesson_id: int, language: str, 
+                                       level: str, communication_language: Optional[str] = None) -> str:
+        """Generate AI response for lesson-specific conversation"""
+        if not self.model:
+            return "AI service is currently unavailable."
+
+        try:
+            # Create separate conversation history for lesson chats
+            lesson_user_id = f"{user_id}_lesson_{lesson_id}"
+            
+            if lesson_user_id not in self.conversation_history:
+                self.conversation_history[lesson_user_id] = []
+            
+            # Create lesson-specific system prompt
+            lesson_system_prompt = self._create_lesson_system_prompt(
+                language, level, lesson_title, lesson_content, communication_language
+            )
+            
+            # Build conversation context
+            conversation_context = f"{lesson_system_prompt}\n\nLesson Chat History:\n"
+            
+            # Add recent conversation history (last 10 messages)
+            recent_history = self.conversation_history[lesson_user_id][-10:]
+            for entry in recent_history:
+                conversation_context += f"User: {entry['user']}\nAI: {entry['ai']}\n"
+            
+            conversation_context += f"\nUser: {message}\nAI: "
+            
+            # Generate response
+            response = self.model.generate_content(conversation_context)
+            ai_response = response.text
+            
+            # Store conversation in lesson-specific history
+            self.conversation_history[lesson_user_id].append({
+                "user": message,
+                "ai": ai_response
+            })
+            
+            # Keep only last 20 messages to manage memory
+            if len(self.conversation_history[lesson_user_id]) > 20:
+                self.conversation_history[lesson_user_id] = self.conversation_history[lesson_user_id][-20:]
+            
+            return ai_response
+            
+        except Exception as e:
+            logger.error(f"Error in lesson conversation: {e}")
+            return "Sorry, I couldn't process your message about this lesson."
+
+    def _create_lesson_system_prompt(self, language: str, level: str, lesson_title: str, 
+                                   lesson_content: str, communication_language: Optional[str] = None) -> str:
+        """Create system prompt for lesson-specific conversation"""
+        
+        # Extract key content from lesson (first 500 chars)
+        lesson_summary = lesson_content[:500] + "..." if len(lesson_content) > 500 else lesson_content
+        
+        target_lang_name = {
+            'turkish': 'Turkish',
+            'english': 'English', 
+            'german': 'German'
+        }.get(language, language.title())
+        
+        base_prompt = f"""You are a specialized {target_lang_name} language teacher assistant focused on the current lesson.
+
+📚 CURRENT LESSON CONTEXT:
+- Lesson Title: {lesson_title}
+- Language: {target_lang_name}
+- Level: {level}
+- Lesson Content Preview: {lesson_summary}
+
+🎯 YOUR ROLE:
+1. Answer questions specifically about this lesson content
+2. Provide explanations about topics covered in this lesson
+3. Give practice exercises related to lesson material
+4. Clarify grammar points mentioned in the lesson
+5. Help with vocabulary from this specific lesson
+6. Create examples using lesson content
+
+📋 GUIDELINES:
+- Always relate your answers to the current lesson content
+- Use examples from the lesson when possible
+- If asked about topics not in this lesson, gently redirect to lesson content
+- Provide practice exercises using lesson vocabulary and grammar
+- Help with pronunciation of words from this lesson
+- Explain cultural context if relevant to lesson content
+
+⚠️ IMPORTANT:
+- Stay focused on THIS specific lesson
+- Don't provide general language learning advice unrelated to current lesson
+- Reference lesson content in your explanations
+- Help users understand and practice what they just learned"""
+
+        # Add communication language preference
+        if communication_language and communication_language != language:
+            comm_lang_name = {
+                'turkish': 'Turkish',
+                'english': 'English',
+                'german': 'German'
+            }.get(communication_language, communication_language.title())
+            
+            base_prompt += f"""
+
+🗣️ COMMUNICATION PREFERENCE:
+The user prefers explanations in {comm_lang_name}, but encourage them to practice {target_lang_name} when appropriate for the lesson content."""
+
+        return base_prompt
+
 # Global instance
 ai_service = AIService()

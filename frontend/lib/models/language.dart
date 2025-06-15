@@ -17,9 +17,9 @@ class Language with _$Language {
 
 // Desteklenen diller
 const List<Language> supportedLanguages = [
-  Language(code: 'tr', name: 'Türkçe', flag: '🇹🇷'),
-  Language(code: 'en', name: 'English', flag: '🇺🇸'),
-  Language(code: 'de', name: 'Deutsch', flag: '🇩🇪'),
+  Language(code: 'turkish', name: 'Türkçe', flag: '🇹🇷'),
+  Language(code: 'english', name: 'English', flag: '🇺🇸'),
+  Language(code: 'german', name: 'Deutsch', flag: '🇩🇪'),
 ];
 
 // Dil seviyeleri
@@ -41,6 +41,23 @@ enum LanguageLevel {
 }
 
 extension LanguageLevelExtension on LanguageLevel {
+  String get code {
+    switch (this) {
+      case LanguageLevel.A1:
+        return 'A1';
+      case LanguageLevel.A2:
+        return 'A2';
+      case LanguageLevel.B1:
+        return 'B1';
+      case LanguageLevel.B2:
+        return 'B2';
+      case LanguageLevel.C1:
+        return 'C1';
+      case LanguageLevel.C2:
+        return 'C2';
+    }
+  }
+
   String get displayName {
     switch (this) {
       case LanguageLevel.A1:

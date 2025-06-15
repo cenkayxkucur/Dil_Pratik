@@ -8,52 +8,52 @@ part of 'lesson.dart';
 
 _$LessonImpl _$$LessonImplFromJson(Map<String, dynamic> json) => _$LessonImpl(
       id: (json['id'] as num).toInt(),
-      userId: (json['userId'] as num).toInt(),
       title: json['title'] as String,
+      description: json['description'] as String?,
+      language: json['language'] as String,
+      level: json['level'] as String,
       content: json['content'] as String,
-      level: $enumDecode(_$LanguageLevelEnumMap, json['level']),
-      language: Language.fromJson(json['language'] as Map<String, dynamic>),
-      type: $enumDecode(_$LessonTypeEnumMap, json['type']),
+      orderIndex: (json['orderIndex'] as num?)?.toInt() ?? 0,
+      isActive: json['isActive'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: json['updatedAt'] == null
           ? null
           : DateTime.parse(json['updatedAt'] as String),
-      isCompleted: json['isCompleted'] as bool? ?? false,
-      score: (json['score'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$$LessonImplToJson(_$LessonImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'userId': instance.userId,
       'title': instance.title,
-      'content': instance.content,
-      'level': _$LanguageLevelEnumMap[instance.level]!,
+      'description': instance.description,
       'language': instance.language,
-      'type': _$LessonTypeEnumMap[instance.type]!,
+      'level': instance.level,
+      'content': instance.content,
+      'orderIndex': instance.orderIndex,
+      'isActive': instance.isActive,
       'createdAt': instance.createdAt.toIso8601String(),
       'updatedAt': instance.updatedAt?.toIso8601String(),
-      'isCompleted': instance.isCompleted,
-      'score': instance.score,
     };
 
-const _$LanguageLevelEnumMap = {
-  LanguageLevel.A1: 'A1',
-  LanguageLevel.A2: 'A2',
-  LanguageLevel.B1: 'B1',
-  LanguageLevel.B2: 'B2',
-  LanguageLevel.C1: 'C1',
-  LanguageLevel.C2: 'C2',
-};
+_$LessonListResponseImpl _$$LessonListResponseImplFromJson(
+        Map<String, dynamic> json) =>
+    _$LessonListResponseImpl(
+      lessons: (json['lessons'] as List<dynamic>)
+          .map((e) => Lesson.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      total: (json['total'] as num).toInt(),
+      offset: (json['offset'] as num).toInt(),
+      limit: (json['limit'] as num).toInt(),
+    );
 
-const _$LessonTypeEnumMap = {
-  LessonType.grammar: 'grammar',
-  LessonType.vocabulary: 'vocabulary',
-  LessonType.listening: 'listening',
-  LessonType.speaking: 'speaking',
-  LessonType.reading: 'reading',
-  LessonType.writing: 'writing',
-};
+Map<String, dynamic> _$$LessonListResponseImplToJson(
+        _$LessonListResponseImpl instance) =>
+    <String, dynamic>{
+      'lessons': instance.lessons,
+      'total': instance.total,
+      'offset': instance.offset,
+      'limit': instance.limit,
+    };
 
 _$LessonContentImpl _$$LessonContentImplFromJson(Map<String, dynamic> json) =>
     _$LessonContentImpl(

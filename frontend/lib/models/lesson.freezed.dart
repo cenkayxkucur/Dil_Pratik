@@ -21,16 +21,15 @@ Lesson _$LessonFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$Lesson {
   int get id => throw _privateConstructorUsedError;
-  int get userId => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
+  String get language => throw _privateConstructorUsedError;
+  String get level => throw _privateConstructorUsedError;
   String get content => throw _privateConstructorUsedError;
-  LanguageLevel get level => throw _privateConstructorUsedError;
-  Language get language => throw _privateConstructorUsedError;
-  LessonType get type => throw _privateConstructorUsedError;
+  int get orderIndex => throw _privateConstructorUsedError;
+  bool get isActive => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
-  bool get isCompleted => throw _privateConstructorUsedError;
-  int get score => throw _privateConstructorUsedError;
 
   /// Serializes this Lesson to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -48,18 +47,15 @@ abstract class $LessonCopyWith<$Res> {
   @useResult
   $Res call(
       {int id,
-      int userId,
       String title,
+      String? description,
+      String language,
+      String level,
       String content,
-      LanguageLevel level,
-      Language language,
-      LessonType type,
+      int orderIndex,
+      bool isActive,
       DateTime createdAt,
-      DateTime? updatedAt,
-      bool isCompleted,
-      int score});
-
-  $LanguageCopyWith<$Res> get language;
+      DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -78,46 +74,49 @@ class _$LessonCopyWithImpl<$Res, $Val extends Lesson>
   @override
   $Res call({
     Object? id = null,
-    Object? userId = null,
     Object? title = null,
-    Object? content = null,
-    Object? level = null,
+    Object? description = freezed,
     Object? language = null,
-    Object? type = null,
+    Object? level = null,
+    Object? content = null,
+    Object? orderIndex = null,
+    Object? isActive = null,
     Object? createdAt = null,
     Object? updatedAt = freezed,
-    Object? isCompleted = null,
-    Object? score = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as int,
-      userId: null == userId
-          ? _value.userId
-          : userId // ignore: cast_nullable_to_non_nullable
-              as int,
       title: null == title
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
+              as String,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      language: null == language
+          ? _value.language
+          : language // ignore: cast_nullable_to_non_nullable
+              as String,
+      level: null == level
+          ? _value.level
+          : level // ignore: cast_nullable_to_non_nullable
               as String,
       content: null == content
           ? _value.content
           : content // ignore: cast_nullable_to_non_nullable
               as String,
-      level: null == level
-          ? _value.level
-          : level // ignore: cast_nullable_to_non_nullable
-              as LanguageLevel,
-      language: null == language
-          ? _value.language
-          : language // ignore: cast_nullable_to_non_nullable
-              as Language,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as LessonType,
+      orderIndex: null == orderIndex
+          ? _value.orderIndex
+          : orderIndex // ignore: cast_nullable_to_non_nullable
+              as int,
+      isActive: null == isActive
+          ? _value.isActive
+          : isActive // ignore: cast_nullable_to_non_nullable
+              as bool,
       createdAt: null == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -126,25 +125,7 @@ class _$LessonCopyWithImpl<$Res, $Val extends Lesson>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
-      isCompleted: null == isCompleted
-          ? _value.isCompleted
-          : isCompleted // ignore: cast_nullable_to_non_nullable
-              as bool,
-      score: null == score
-          ? _value.score
-          : score // ignore: cast_nullable_to_non_nullable
-              as int,
     ) as $Val);
-  }
-
-  /// Create a copy of Lesson
-  /// with the given fields replaced by the non-null parameter values.
-  @override
-  @pragma('vm:prefer-inline')
-  $LanguageCopyWith<$Res> get language {
-    return $LanguageCopyWith<$Res>(_value.language, (value) {
-      return _then(_value.copyWith(language: value) as $Val);
-    });
   }
 }
 
@@ -157,19 +138,15 @@ abstract class _$$LessonImplCopyWith<$Res> implements $LessonCopyWith<$Res> {
   @useResult
   $Res call(
       {int id,
-      int userId,
       String title,
+      String? description,
+      String language,
+      String level,
       String content,
-      LanguageLevel level,
-      Language language,
-      LessonType type,
+      int orderIndex,
+      bool isActive,
       DateTime createdAt,
-      DateTime? updatedAt,
-      bool isCompleted,
-      int score});
-
-  @override
-  $LanguageCopyWith<$Res> get language;
+      DateTime? updatedAt});
 }
 
 /// @nodoc
@@ -186,46 +163,49 @@ class __$$LessonImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? userId = null,
     Object? title = null,
-    Object? content = null,
-    Object? level = null,
+    Object? description = freezed,
     Object? language = null,
-    Object? type = null,
+    Object? level = null,
+    Object? content = null,
+    Object? orderIndex = null,
+    Object? isActive = null,
     Object? createdAt = null,
     Object? updatedAt = freezed,
-    Object? isCompleted = null,
-    Object? score = null,
   }) {
     return _then(_$LessonImpl(
       id: null == id
           ? _value.id
           : id // ignore: cast_nullable_to_non_nullable
               as int,
-      userId: null == userId
-          ? _value.userId
-          : userId // ignore: cast_nullable_to_non_nullable
-              as int,
       title: null == title
           ? _value.title
           : title // ignore: cast_nullable_to_non_nullable
+              as String,
+      description: freezed == description
+          ? _value.description
+          : description // ignore: cast_nullable_to_non_nullable
+              as String?,
+      language: null == language
+          ? _value.language
+          : language // ignore: cast_nullable_to_non_nullable
+              as String,
+      level: null == level
+          ? _value.level
+          : level // ignore: cast_nullable_to_non_nullable
               as String,
       content: null == content
           ? _value.content
           : content // ignore: cast_nullable_to_non_nullable
               as String,
-      level: null == level
-          ? _value.level
-          : level // ignore: cast_nullable_to_non_nullable
-              as LanguageLevel,
-      language: null == language
-          ? _value.language
-          : language // ignore: cast_nullable_to_non_nullable
-              as Language,
-      type: null == type
-          ? _value.type
-          : type // ignore: cast_nullable_to_non_nullable
-              as LessonType,
+      orderIndex: null == orderIndex
+          ? _value.orderIndex
+          : orderIndex // ignore: cast_nullable_to_non_nullable
+              as int,
+      isActive: null == isActive
+          ? _value.isActive
+          : isActive // ignore: cast_nullable_to_non_nullable
+              as bool,
       createdAt: null == createdAt
           ? _value.createdAt
           : createdAt // ignore: cast_nullable_to_non_nullable
@@ -234,14 +214,6 @@ class __$$LessonImplCopyWithImpl<$Res>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime?,
-      isCompleted: null == isCompleted
-          ? _value.isCompleted
-          : isCompleted // ignore: cast_nullable_to_non_nullable
-              as bool,
-      score: null == score
-          ? _value.score
-          : score // ignore: cast_nullable_to_non_nullable
-              as int,
     ));
   }
 }
@@ -251,16 +223,15 @@ class __$$LessonImplCopyWithImpl<$Res>
 class _$LessonImpl implements _Lesson {
   const _$LessonImpl(
       {required this.id,
-      required this.userId,
       required this.title,
-      required this.content,
-      required this.level,
+      this.description,
       required this.language,
-      required this.type,
+      required this.level,
+      required this.content,
+      this.orderIndex = 0,
+      this.isActive = true,
       required this.createdAt,
-      this.updatedAt,
-      this.isCompleted = false,
-      this.score = 0});
+      this.updatedAt});
 
   factory _$LessonImpl.fromJson(Map<String, dynamic> json) =>
       _$$LessonImplFromJson(json);
@@ -268,31 +239,29 @@ class _$LessonImpl implements _Lesson {
   @override
   final int id;
   @override
-  final int userId;
-  @override
   final String title;
+  @override
+  final String? description;
+  @override
+  final String language;
+  @override
+  final String level;
   @override
   final String content;
   @override
-  final LanguageLevel level;
+  @JsonKey()
+  final int orderIndex;
   @override
-  final Language language;
-  @override
-  final LessonType type;
+  @JsonKey()
+  final bool isActive;
   @override
   final DateTime createdAt;
   @override
   final DateTime? updatedAt;
-  @override
-  @JsonKey()
-  final bool isCompleted;
-  @override
-  @JsonKey()
-  final int score;
 
   @override
   String toString() {
-    return 'Lesson(id: $id, userId: $userId, title: $title, content: $content, level: $level, language: $language, type: $type, createdAt: $createdAt, updatedAt: $updatedAt, isCompleted: $isCompleted, score: $score)';
+    return 'Lesson(id: $id, title: $title, description: $description, language: $language, level: $level, content: $content, orderIndex: $orderIndex, isActive: $isActive, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 
   @override
@@ -301,26 +270,27 @@ class _$LessonImpl implements _Lesson {
         (other.runtimeType == runtimeType &&
             other is _$LessonImpl &&
             (identical(other.id, id) || other.id == id) &&
-            (identical(other.userId, userId) || other.userId == userId) &&
             (identical(other.title, title) || other.title == title) &&
-            (identical(other.content, content) || other.content == content) &&
-            (identical(other.level, level) || other.level == level) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
             (identical(other.language, language) ||
                 other.language == language) &&
-            (identical(other.type, type) || other.type == type) &&
+            (identical(other.level, level) || other.level == level) &&
+            (identical(other.content, content) || other.content == content) &&
+            (identical(other.orderIndex, orderIndex) ||
+                other.orderIndex == orderIndex) &&
+            (identical(other.isActive, isActive) ||
+                other.isActive == isActive) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt) &&
-            (identical(other.isCompleted, isCompleted) ||
-                other.isCompleted == isCompleted) &&
-            (identical(other.score, score) || other.score == score));
+                other.updatedAt == updatedAt));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, userId, title, content,
-      level, language, type, createdAt, updatedAt, isCompleted, score);
+  int get hashCode => Object.hash(runtimeType, id, title, description, language,
+      level, content, orderIndex, isActive, createdAt, updatedAt);
 
   /// Create a copy of Lesson
   /// with the given fields replaced by the non-null parameter values.
@@ -341,47 +311,258 @@ class _$LessonImpl implements _Lesson {
 abstract class _Lesson implements Lesson {
   const factory _Lesson(
       {required final int id,
-      required final int userId,
       required final String title,
+      final String? description,
+      required final String language,
+      required final String level,
       required final String content,
-      required final LanguageLevel level,
-      required final Language language,
-      required final LessonType type,
+      final int orderIndex,
+      final bool isActive,
       required final DateTime createdAt,
-      final DateTime? updatedAt,
-      final bool isCompleted,
-      final int score}) = _$LessonImpl;
+      final DateTime? updatedAt}) = _$LessonImpl;
 
   factory _Lesson.fromJson(Map<String, dynamic> json) = _$LessonImpl.fromJson;
 
   @override
   int get id;
   @override
-  int get userId;
-  @override
   String get title;
+  @override
+  String? get description;
+  @override
+  String get language;
+  @override
+  String get level;
   @override
   String get content;
   @override
-  LanguageLevel get level;
+  int get orderIndex;
   @override
-  Language get language;
-  @override
-  LessonType get type;
+  bool get isActive;
   @override
   DateTime get createdAt;
   @override
   DateTime? get updatedAt;
-  @override
-  bool get isCompleted;
-  @override
-  int get score;
 
   /// Create a copy of Lesson
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$LessonImplCopyWith<_$LessonImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+LessonListResponse _$LessonListResponseFromJson(Map<String, dynamic> json) {
+  return _LessonListResponse.fromJson(json);
+}
+
+/// @nodoc
+mixin _$LessonListResponse {
+  List<Lesson> get lessons => throw _privateConstructorUsedError;
+  int get total => throw _privateConstructorUsedError;
+  int get offset => throw _privateConstructorUsedError;
+  int get limit => throw _privateConstructorUsedError;
+
+  /// Serializes this LessonListResponse to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of LessonListResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $LessonListResponseCopyWith<LessonListResponse> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $LessonListResponseCopyWith<$Res> {
+  factory $LessonListResponseCopyWith(
+          LessonListResponse value, $Res Function(LessonListResponse) then) =
+      _$LessonListResponseCopyWithImpl<$Res, LessonListResponse>;
+  @useResult
+  $Res call({List<Lesson> lessons, int total, int offset, int limit});
+}
+
+/// @nodoc
+class _$LessonListResponseCopyWithImpl<$Res, $Val extends LessonListResponse>
+    implements $LessonListResponseCopyWith<$Res> {
+  _$LessonListResponseCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of LessonListResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? lessons = null,
+    Object? total = null,
+    Object? offset = null,
+    Object? limit = null,
+  }) {
+    return _then(_value.copyWith(
+      lessons: null == lessons
+          ? _value.lessons
+          : lessons // ignore: cast_nullable_to_non_nullable
+              as List<Lesson>,
+      total: null == total
+          ? _value.total
+          : total // ignore: cast_nullable_to_non_nullable
+              as int,
+      offset: null == offset
+          ? _value.offset
+          : offset // ignore: cast_nullable_to_non_nullable
+              as int,
+      limit: null == limit
+          ? _value.limit
+          : limit // ignore: cast_nullable_to_non_nullable
+              as int,
+    ) as $Val);
+  }
+}
+
+/// @nodoc
+abstract class _$$LessonListResponseImplCopyWith<$Res>
+    implements $LessonListResponseCopyWith<$Res> {
+  factory _$$LessonListResponseImplCopyWith(_$LessonListResponseImpl value,
+          $Res Function(_$LessonListResponseImpl) then) =
+      __$$LessonListResponseImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({List<Lesson> lessons, int total, int offset, int limit});
+}
+
+/// @nodoc
+class __$$LessonListResponseImplCopyWithImpl<$Res>
+    extends _$LessonListResponseCopyWithImpl<$Res, _$LessonListResponseImpl>
+    implements _$$LessonListResponseImplCopyWith<$Res> {
+  __$$LessonListResponseImplCopyWithImpl(_$LessonListResponseImpl _value,
+      $Res Function(_$LessonListResponseImpl) _then)
+      : super(_value, _then);
+
+  /// Create a copy of LessonListResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({
+    Object? lessons = null,
+    Object? total = null,
+    Object? offset = null,
+    Object? limit = null,
+  }) {
+    return _then(_$LessonListResponseImpl(
+      lessons: null == lessons
+          ? _value._lessons
+          : lessons // ignore: cast_nullable_to_non_nullable
+              as List<Lesson>,
+      total: null == total
+          ? _value.total
+          : total // ignore: cast_nullable_to_non_nullable
+              as int,
+      offset: null == offset
+          ? _value.offset
+          : offset // ignore: cast_nullable_to_non_nullable
+              as int,
+      limit: null == limit
+          ? _value.limit
+          : limit // ignore: cast_nullable_to_non_nullable
+              as int,
+    ));
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$LessonListResponseImpl implements _LessonListResponse {
+  const _$LessonListResponseImpl(
+      {required final List<Lesson> lessons,
+      required this.total,
+      required this.offset,
+      required this.limit})
+      : _lessons = lessons;
+
+  factory _$LessonListResponseImpl.fromJson(Map<String, dynamic> json) =>
+      _$$LessonListResponseImplFromJson(json);
+
+  final List<Lesson> _lessons;
+  @override
+  List<Lesson> get lessons {
+    if (_lessons is EqualUnmodifiableListView) return _lessons;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_lessons);
+  }
+
+  @override
+  final int total;
+  @override
+  final int offset;
+  @override
+  final int limit;
+
+  @override
+  String toString() {
+    return 'LessonListResponse(lessons: $lessons, total: $total, offset: $offset, limit: $limit)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$LessonListResponseImpl &&
+            const DeepCollectionEquality().equals(other._lessons, _lessons) &&
+            (identical(other.total, total) || other.total == total) &&
+            (identical(other.offset, offset) || other.offset == offset) &&
+            (identical(other.limit, limit) || other.limit == limit));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode => Object.hash(runtimeType,
+      const DeepCollectionEquality().hash(_lessons), total, offset, limit);
+
+  /// Create a copy of LessonListResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$LessonListResponseImplCopyWith<_$LessonListResponseImpl> get copyWith =>
+      __$$LessonListResponseImplCopyWithImpl<_$LessonListResponseImpl>(
+          this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$LessonListResponseImplToJson(
+      this,
+    );
+  }
+}
+
+abstract class _LessonListResponse implements LessonListResponse {
+  const factory _LessonListResponse(
+      {required final List<Lesson> lessons,
+      required final int total,
+      required final int offset,
+      required final int limit}) = _$LessonListResponseImpl;
+
+  factory _LessonListResponse.fromJson(Map<String, dynamic> json) =
+      _$LessonListResponseImpl.fromJson;
+
+  @override
+  List<Lesson> get lessons;
+  @override
+  int get total;
+  @override
+  int get offset;
+  @override
+  int get limit;
+
+  /// Create a copy of LessonListResponse
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$LessonListResponseImplCopyWith<_$LessonListResponseImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }
 

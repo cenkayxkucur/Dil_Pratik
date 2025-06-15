@@ -28,6 +28,21 @@ class PracticeContentRequest(BaseModel):
     language: str
     level: str
 
+class LessonChatRequest(BaseModel):
+    message: str
+    lesson_id: int
+    lesson_content: str
+    lesson_title: str
+    user_id: str
+    language: str
+    level: str
+    communication_language: Optional[str] = None
+
+class LessonChatResponse(BaseModel):
+    response: str
+    success: bool
+    lesson_context: Optional[str] = None
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_ai(request: ChatRequest, db: Session = Depends(get_db)):
     """Chat with AI language teacher"""
@@ -76,6 +91,31 @@ async def generate_practice_content(request: PracticeContentRequest, db: Session
     
     except Exception as e:
         print(f"Content generation error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/lesson-chat", response_model=LessonChatResponse)
+async def lesson_chat_with_ai(request: LessonChatRequest, db: Session = Depends(get_db)):
+    """Chat with AI about specific lesson content"""
+    try:
+        response = ai_service.get_lesson_conversation_response(
+            user_id=request.user_id,
+            message=request.message,
+            lesson_content=request.lesson_content,
+            lesson_title=request.lesson_title,
+            lesson_id=request.lesson_id,
+            language=request.language,
+            level=request.level,
+            communication_language=request.communication_language
+        )
+        
+        return LessonChatResponse(
+            response=response, 
+            success=True,
+            lesson_context=f"Ders: {request.lesson_title}"
+        )
+    
+    except Exception as e:
+        print(f"Lesson chat error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/conversation-history/{user_id}")

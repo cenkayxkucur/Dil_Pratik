@@ -1,5 +1,4 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'language.dart';
 
 part 'lesson.freezed.dart';
 part 'lesson.g.dart';
@@ -8,19 +7,30 @@ part 'lesson.g.dart';
 class Lesson with _$Lesson {
   const factory Lesson({
     required int id,
-    required int userId,
     required String title,
+    String? description,
+    required String language,
+    required String level,
     required String content,
-    required LanguageLevel level,
-    required Language language,
-    required LessonType type,
+    @Default(0) int orderIndex,
+    @Default(true) bool isActive,
     required DateTime createdAt,
     DateTime? updatedAt,
-    @Default(false) bool isCompleted,
-    @Default(0) int score,
   }) = _Lesson;
 
   factory Lesson.fromJson(Map<String, dynamic> json) => _$LessonFromJson(json);
+}
+
+@freezed
+class LessonListResponse with _$LessonListResponse {
+  const factory LessonListResponse({
+    required List<Lesson> lessons,
+    required int total,
+    required int offset,
+    required int limit,
+  }) = _LessonListResponse;
+
+  factory LessonListResponse.fromJson(Map<String, dynamic> json) => _$LessonListResponseFromJson(json);
 }
 
 enum LessonType {

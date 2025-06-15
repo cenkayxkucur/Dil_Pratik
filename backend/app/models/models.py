@@ -26,11 +26,13 @@ class Lesson(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    title = Column(String)
+    title = Column(String, nullable=False)
     description = Column(Text)
-    content = Column(Text)
-    difficulty = Column(String)  # beginner, intermediate, advanced
-    language = Column(String)  # target language
+    content = Column(Text, nullable=False)
+    language = Column(String, nullable=False)  # turkish, english, german
+    level = Column(String, nullable=False)  # A1, A2, B1, B2, C1, C2
+    order_index = Column(Integer, default=0)  # Lesson order within level
+    is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 

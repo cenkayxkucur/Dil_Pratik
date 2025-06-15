@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../models/language.dart';
 import '../widgets/language_selector.dart';
 import '../screens/home_screen.dart';
+import 'structured_level_lessons_screen.dart';
 
 class LessonsScreen extends ConsumerWidget {
   const LessonsScreen({super.key});
@@ -14,7 +15,7 @@ class LessonsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${selectedLanguage?.flag} ${selectedLanguage?.name} Dersleri'),
+        title: Text('${selectedLanguage?.flag ?? ''} ${selectedLanguage?.name ?? ''} Dersleri'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
@@ -54,8 +55,14 @@ class LessonsScreen extends ConsumerWidget {
                   return Card(
                     elevation: 4,
                     child: InkWell(
-                      onTap: () {
-                        _navigateToLevelScreen(context, selectedLanguage!, level);
+                      onTap: () {                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => StructuredLevelLessonsScreen(
+                              language: selectedLanguage!,
+                              level: level,
+                            ),
+                          ),
+                        );
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
@@ -110,14 +117,5 @@ class LessonsScreen extends ConsumerWidget {
       case LanguageLevel.C2:
         return Colors.purple;
     }
-  }
-
-  void _navigateToLevelScreen(BuildContext context, Language language, LanguageLevel level) {
-    // TODO: Navigate to level-specific lessons
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${language.flag} ${language.name} - ${level.displayName} dersleri yakında!'),
-      ),
-    );
   }
 }

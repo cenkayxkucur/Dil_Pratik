@@ -1,13 +1,27 @@
 // Cross-platform speech service wrapper
 // ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:js' as js;
+import 'dart:async';
 
 class SpeechService {
   dynamic _recognition;
   bool _isListening = false;
   Function(String)? _onResult;
   Function(String)? _onError;
-
+  Timer? _timeoutTimer;
+    // Timeout ayarları - bu değerleri değiştirerek sessizlik süresini kontrol edebilirsiniz
+  static const int silenceTimeoutSeconds = 5; // 5 saniye sessizlik sonrası durdur
+  static const int maxListeningTimeSeconds = 30; // Maksimum dinleme süresi
+  
+  // KULLANIM: Farklı timeout değerleri ile kullanım
+  // speechService.startListening(
+  //   language: 'turkish',
+  //   silenceTimeoutSeconds: 5, // 5 saniye bekle
+  //   maxListeningTimeSeconds: 15, // Maksimum 15 saniye dinle
+  //   onResult: (text) => print(text),
+  //   onError: (error) => print(error),
+  // );
+  
   bool get isListening => _isListening;
 
   bool get isSupported {
@@ -18,11 +32,12 @@ class SpeechService {
       return false;
     }
   }
-
   void startListening({
     required String language,
     Function(String)? onResult,
     Function(String)? onError,
+    int? silenceTimeoutSeconds, // Özel timeout süresi (opsiyonel)
+    int? maxListeningTimeSeconds, // Özel maksimum dinleme süresi (opsiyonel)
   }) {
     if (!isSupported) {
       onError?.call('Speech recognition not supported');
@@ -35,6 +50,18 @@ class SpeechService {
 
     _onResult = onResult;
     _onError = onError;
+    
+    // Timeout timer'ını başlat
+    final effectiveSilenceTimeout = silenceTimeoutSeconds ?? SpeechService.silenceTimeoutSeconds;
+    final effectiveMaxTimeout = maxListeningTimeSeconds ?? SpeechService.maxListeningTimeSeconds;
+    
+    _timeoutTimer = Timer(Duration(seconds: effectiveMaxTimeout), () {
+      if (_isListening) {
+        print('🔇 Speech recognition timeout reached (${effectiveMaxTimeout}s)');
+        stopListening();
+        onError?.call('Speech recognition timeout - maksimum dinleme süresi aşıldı');
+      }
+    });
 
     try {
       // Create SpeechRecognition instance
@@ -125,8 +152,11 @@ class SpeechService {
       onError?.call('Failed to initialize speech recognition: $e');
     }
   }
-
   void stopListening() {
+    // Timer'ı temizle
+    _timeoutTimer?.cancel();
+    _timeoutTimer = null;
+    
     if (_recognition != null && _isListening) {
       try {
         _recognition.callMethod('stop');
@@ -161,9 +191,10 @@ class SpeechService {
         return 'en-US';
     }
   }
-
   void dispose() {
     stopListening();
+    _timeoutTimer?.cancel();
+    _timeoutTimer = null;
     _recognition = null;
     _onResult = null;
     _onError = null;

@@ -6,6 +6,7 @@ import '../models/user.dart';
 import '../models/lesson.dart';
 import '../models/progress.dart';
 import '../models/language.dart';
+import '../models/structured_lesson.dart';
 import 'user_session_service.dart';
 
 class ApiService {
@@ -68,13 +69,60 @@ class ApiService {
       throw _handleError(e);
     }
   }
-
   Future<List<Lesson>> getLessons() async {
     try {
       final response = await _dio.get('/lessons/');
       return (response.data as List)
           .map((json) => Lesson.fromJson(json))
           .toList();
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // New lesson methods for the updated system
+  Future<Map<String, dynamic>> getLessonsByFilter({
+    String? language,
+    String? level,
+    int? limit,
+    int? offset,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{};
+      if (language != null) queryParams['language'] = language;
+      if (level != null) queryParams['level'] = level;
+      if (limit != null) queryParams['limit'] = limit;
+      if (offset != null) queryParams['offset'] = offset;
+
+      final response = await _dio.get('/lessons/', queryParameters: queryParams);
+      return response.data;
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> getLessonById(int lessonId) async {
+    try {
+      final response = await _dio.get('/lessons/$lessonId');
+      return response.data;
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<String>> getAvailableLanguages() async {
+    try {
+      final response = await _dio.get('/lessons/metadata/languages');
+      return List<String>.from(response.data);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<String>> getAvailableLevels(String language) async {
+    try {
+      final response = await _dio.get('/lessons/metadata/levels/$language');
+      return List<String>.from(response.data);
     } catch (e) {
       throw _handleError(e);
     }
@@ -253,6 +301,102 @@ class ApiService {
         'İyi bir başlangıç! Gramer kurallarına dikkat ederek tekrar deneyin.',
       ];
       return responses[DateTime.now().millisecond % responses.length];
+    }
+  }
+
+  // Structured Lesson API Methods
+  Future<List<String>> getStructuredLanguages() async {
+    try {
+      final response = await _dio.get('/v2/languages');
+      return List<String>.from(response.data);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<List<Map<String, String>>> getStructuredLevelsForLanguage(String language) async {
+    try {
+      final response = await _dio.get('/v2/languages/$language/levels');
+      return List<Map<String, String>>.from(response.data);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<LanguageLevelWithTopics> getLanguageLevelWithTopics(String language, String level) async {
+    try {
+      final response = await _dio.get('/v2/languages/$language/levels/$level');
+      return LanguageLevelWithTopics.fromJson(response.data);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<GrammarTopicWithLessons> getGrammarTopicWithLessons(int topicId) async {
+    try {
+      final response = await _dio.get('/v2/topics/$topicId');
+      return GrammarTopicWithLessons.fromJson(response.data);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<StructuredLessonResponse> getStructuredLesson(int lessonId) async {
+    try {
+      final response = await _dio.get('/v2/lessons/$lessonId');
+      return StructuredLessonResponse.fromJson(response.data);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<LanguageLessonsResponse> getLanguageLessons({
+    required String language,
+    String? level,
+    int? topicId,
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{
+        'limit': limit,
+        'offset': offset,
+      };
+      if (level != null) queryParams['level'] = level;
+      if (topicId != null) queryParams['topic_id'] = topicId;
+
+      final response = await _dio.get('/v2/languages/$language/lessons', queryParameters: queryParams);
+      return LanguageLessonsResponse.fromJson(response.data);
+    } catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  // Lesson Chat API Method
+  Future<String> lessonChat({
+    required String message,
+    required int lessonId,
+    required String lessonContent,
+    required String lessonTitle,
+    required String language,
+    required String level,
+    String? userId,
+  }) async {
+    try {
+      final response = await _dio.post('/ai/lesson-chat', data: {
+        'message': message,
+        'lesson_id': lessonId,
+        'lesson_content': lessonContent,
+        'lesson_title': lessonTitle,
+        'user_id': userId ?? 'anonymous_user',
+        'language': language,
+        'level': level,
+        'communication_language': 'turkish', // Default to Turkish for explanations
+      });
+      
+      return response.data['response'] ?? 'Yanıt alınamadı';
+    } catch (e) {
+      throw _handleError(e);
     }
   }
 
