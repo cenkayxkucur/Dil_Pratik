@@ -67,7 +67,7 @@ Son güncelleme: 2026-04-07
 
 ### Yeni Özellikler
 
-- [ ] **Spaced Repetition (Aralıklı Tekrar) Sistemi** — yanlış yapılan kelime/gramer noktaları otomatik tekrar kuyruğuna giriyor; "Hatalarından Ders Al" ekranı bunu beslemeli
+- [x] **Spaced Repetition (Aralıklı Tekrar) Sistemi** — yanlış yapılan kelime/gramer noktaları otomatik tekrar kuyruğuna giriyor; "Hatalarından Ders Al" ekranı bunu beslemeli
 - [ ] **Günlük hedef & streak sistemi** — "günde 10 dakika" hedefi + üst üste kaç gün pratik yaptın sayacı
 - [ ] **Kelime defteri** — konuşma/ders sırasında kelime kaydetme, backend'de yeni model gerekiyor
 - [ ] **Yapılandırılmış egzersiz modları** — şu an sadece serbest sohbet var; çoktan seçmeli, çeviri, boşluk doldurma modları

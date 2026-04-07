@@ -103,6 +103,93 @@ class DayActivity {
       );
 }
 
+class ReviewWord {
+  final String word;
+  final int incorrect;
+  final int correct;
+  final double errorRate;
+  final DateTime? nextReviewAt;
+
+  const ReviewWord({
+    required this.word,
+    required this.incorrect,
+    required this.correct,
+    required this.errorRate,
+    this.nextReviewAt,
+  });
+
+  factory ReviewWord.fromJson(Map<String, dynamic> json) => ReviewWord(
+        word: json['word'] as String,
+        incorrect: json['incorrect'] as int? ?? 0,
+        correct: json['correct'] as int? ?? 0,
+        errorRate: (json['error_rate'] as num).toDouble(),
+        nextReviewAt: json['next_review_at'] != null
+            ? DateTime.tryParse(json['next_review_at'] as String)
+            : null,
+      );
+}
+
+class ReviewGrammar {
+  final String code;
+  final String display;
+  final double errorRate;
+  final int incorrect;
+  final int correct;
+  final String level;
+
+  const ReviewGrammar({
+    required this.code,
+    required this.display,
+    required this.errorRate,
+    required this.incorrect,
+    required this.correct,
+    required this.level,
+  });
+
+  factory ReviewGrammar.fromJson(Map<String, dynamic> json) => ReviewGrammar(
+        code: json['code'] as String,
+        display: json['display'] as String,
+        errorRate: (json['error_rate'] as num).toDouble(),
+        incorrect: json['incorrect'] as int? ?? 0,
+        correct: json['correct'] as int? ?? 0,
+        level: json['level'] as String? ?? '',
+      );
+}
+
+class ReviewQueue {
+  final List<ReviewWord> dueWords;
+  final List<ReviewGrammar> weakGrammar;
+  final List<ReviewWord> weakVocabulary;
+
+  const ReviewQueue({
+    required this.dueWords,
+    required this.weakGrammar,
+    required this.weakVocabulary,
+  });
+
+  factory ReviewQueue.empty() => const ReviewQueue(
+        dueWords: [],
+        weakGrammar: [],
+        weakVocabulary: [],
+      );
+
+  bool get isEmpty =>
+      dueWords.isEmpty && weakGrammar.isEmpty && weakVocabulary.isEmpty;
+
+  factory ReviewQueue.fromJson(Map<String, dynamic> json) {
+    List<T> parse<T>(dynamic raw, T Function(Map<String, dynamic>) fromJson) {
+      if (raw == null) return [];
+      return (raw as List).map((e) => fromJson(e as Map<String, dynamic>)).toList();
+    }
+
+    return ReviewQueue(
+      dueWords: parse(json['due_words'], ReviewWord.fromJson),
+      weakGrammar: parse(json['weak_grammar'], ReviewGrammar.fromJson),
+      weakVocabulary: parse(json['weak_vocabulary'], ReviewWord.fromJson),
+    );
+  }
+}
+
 class ProgressService {
   final _storage = const FlutterSecureStorage();
   late final Dio _dio;
@@ -129,6 +216,18 @@ class ProgressService {
       return LearningProfile.fromJson(response.data as Map<String, dynamic>);
     } catch (_) {
       return LearningProfile.empty();
+    }
+  }
+
+  Future<ReviewQueue> getReviewQueue(String userId, String language) async {
+    try {
+      final response = await _dio.get(
+        '/ai/review-queue/$userId',
+        queryParameters: {'language': language},
+      );
+      return ReviewQueue.fromJson(response.data as Map<String, dynamic>);
+    } catch (_) {
+      return ReviewQueue.empty();
     }
   }
 

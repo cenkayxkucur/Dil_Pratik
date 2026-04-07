@@ -263,6 +263,105 @@ async def get_weak_areas(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/review-queue/{user_id}")
+async def get_review_queue(
+    user_id: str,
+    language: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Spaced repetition kuyruğu:
+    - next_review_at <= şu an olan kelimeler (tekrar zamanı gelmiş)
+    - En yüksek hata oranlı gramer kuralları
+    - En yüksek hata oranlı kelimeler
+    """
+    try:
+        from ..models.models import GrammarKnowledge, WordKnowledge
+        from datetime import datetime
+
+        now = datetime.utcnow()
+
+        def err_rate(r):
+            total = (r.correct_count or 0) + (r.incorrect_count or 0)
+            return round((r.incorrect_count or 0) / total, 2) if total > 0 else 0
+
+        # Tekrar zamanı gelmiş kelimeler
+        due_words = (
+            db.query(WordKnowledge)
+            .filter(
+                WordKnowledge.user_id == user_id,
+                WordKnowledge.language == language,
+                WordKnowledge.next_review_at <= now,
+            )
+            .order_by(WordKnowledge.next_review_at)
+            .limit(20)
+            .all()
+        )
+
+        # Hata oranı yüksek gramer kuralları (min 1 etkileşim)
+        grammar_rows = (
+            db.query(GrammarKnowledge)
+            .filter_by(user_id=user_id, language=language)
+            .filter(GrammarKnowledge.incorrect_count >= 1)
+            .all()
+        )
+        weak_grammar = sorted(
+            [
+                {
+                    "code": r.rule_code,
+                    "display": r.rule_display,
+                    "error_rate": err_rate(r),
+                    "incorrect": r.incorrect_count or 0,
+                    "correct": r.correct_count or 0,
+                    "level": r.level,
+                }
+                for r in grammar_rows
+            ],
+            key=lambda x: x["error_rate"],
+            reverse=True,
+        )[:8]
+
+        # Hata oranı yüksek kelimeler (min 1 yanlış)
+        word_rows = (
+            db.query(WordKnowledge)
+            .filter_by(user_id=user_id, language=language)
+            .filter(WordKnowledge.incorrect_count >= 1)
+            .all()
+        )
+        weak_vocab = sorted(
+            [
+                {
+                    "word": r.word,
+                    "error_rate": err_rate(r),
+                    "incorrect": r.incorrect_count or 0,
+                    "correct": r.correct_count or 0,
+                    "next_review_at": r.next_review_at.isoformat() if r.next_review_at else None,
+                }
+                for r in word_rows
+            ],
+            key=lambda x: x["error_rate"],
+            reverse=True,
+        )[:15]
+
+        return {
+            "success": True,
+            "due_words": [
+                {
+                    "word": w.word,
+                    "incorrect": w.incorrect_count or 0,
+                    "correct": w.correct_count or 0,
+                    "error_rate": err_rate(w),
+                    "next_review_at": w.next_review_at.isoformat() if w.next_review_at else None,
+                }
+                for w in due_words
+            ],
+            "weak_grammar": weak_grammar,
+            "weak_vocabulary": weak_vocab,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/activity/{user_id}")
 async def get_activity(
     user_id: str,

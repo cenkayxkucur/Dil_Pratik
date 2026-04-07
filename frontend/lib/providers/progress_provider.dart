@@ -42,3 +42,15 @@ final activityProvider =
     return service.getActivity(userId, params.language, days: params.days);
   },
 );
+
+// ──────────────────────────────────────────────────────────────
+// Tekrar kuyruğu (spaced repetition + zayıf alanlar)
+// ──────────────────────────────────────────────────────────────
+
+final reviewQueueProvider = FutureProvider.family<ReviewQueue, String>(
+  (ref, language) async {
+    final service = ref.watch(progressServiceProvider);
+    final userId = UserSessionService.getCurrentUserId();
+    return service.getReviewQueue(userId, language);
+  },
+);
