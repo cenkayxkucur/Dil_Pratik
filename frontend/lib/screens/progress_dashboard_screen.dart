@@ -2,379 +2,572 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:fl_chart/fl_chart.dart';
 
-import '../models/progress.dart';
-import '../screens/home_screen.dart';
+import '../providers/language_provider.dart';
+import '../providers/progress_provider.dart';
+import '../services/progress_service.dart';
 
-// Progress providers
-final progressDataProvider = StateProvider<List<Progress>>((ref) => []);
-final selectedTimeRangeProvider = StateProvider<String>((ref) => 'week');
-
-class ProgressDashboardScreen extends ConsumerStatefulWidget {
+class ProgressDashboardScreen extends ConsumerWidget {
   const ProgressDashboardScreen({super.key});
 
   @override
-  ConsumerState<ProgressDashboardScreen> createState() => _ProgressDashboardScreenState();
-}
-
-class _ProgressDashboardScreenState extends ConsumerState<ProgressDashboardScreen> {
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadProgressData();
-  }
-
-  Future<void> _loadProgressData() async {
-    setState(() => _isLoading = true);
-    
-    try {
-      // TODO: Implement actual progress data loading from API
-      // For now, using mock data
-      await Future.delayed(const Duration(seconds: 1));
-        final mockProgress = <Progress>[
-        // Mock progress data
-      ];
-        ref.read(progressDataProvider.notifier).state = mockProgress;
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('İlerleme verileri yüklenemedi: $e')),
-        );
-      }
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final selectedLanguage = ref.watch(selectedLanguageProvider);
-    final timeRange = ref.watch(selectedTimeRangeProvider);
+    final language = selectedLanguage?.code ?? 'english';
+
+    final profileAsync = ref.watch(learningProfileProvider(language));
+    final activityAsync = ref.watch(
+      activityProvider(ActivityParams(language, 7)),
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${selectedLanguage?.flag ?? ''} İlerleme Takibi'),
+        title: Text('${selectedLanguage?.flag ?? ''} İlerleme'),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         actions: [
-          PopupMenuButton<String>(
-            initialValue: timeRange,
-            onSelected: (value) {
-              ref.read(selectedTimeRangeProvider.notifier).state = value;
-              _loadProgressData();
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () {
+              ref.invalidate(learningProfileProvider(language));
+              ref.invalidate(activityProvider(ActivityParams(language, 7)));
             },
-            itemBuilder: (context) => [
-              const PopupMenuItem(value: 'week', child: Text('Bu Hafta')),
-              const PopupMenuItem(value: 'month', child: Text('Bu Ay')),
-              const PopupMenuItem(value: 'year', child: Text('Bu Yıl')),
-              const PopupMenuItem(value: 'all', child: Text('Tüm Zamanlar')),
-            ],
-            child: const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Icon(Icons.date_range),
-            ),
           ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Overview Cards
-                  _buildOverviewCards(),
-                  const SizedBox(height: 24),
-                  
-                  // Weekly Progress Chart
-                  _buildWeeklyProgressChart(),
-                  const SizedBox(height: 24),
-                  
-                  // Skills Breakdown
-                  _buildSkillsBreakdown(),
-                  const SizedBox(height: 24),
-                  
-                  // Achievement Badges
-                  _buildAchievementBadges(),
-                  const SizedBox(height: 24),
-                  
-                  // Recent Activities
-                  _buildRecentActivities(),
-                ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(learningProfileProvider(language));
+          ref.invalidate(activityProvider(ActivityParams(language, 7)));
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: profileAsync.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.only(top: 80),
+                child: CircularProgressIndicator(),
               ),
             ),
+            error: (e, _) => _ErrorCard(message: e.toString()),
+            data: (profile) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (profile.totalInteractions == 0)
+                  _EmptyState(language: language)
+                else ...[
+                  _StatsRow(profile: profile),
+                  const SizedBox(height: 20),
+                  activityAsync.when(
+                    loading: () => const _ChartSkeleton(),
+                    error: (_, __) => const SizedBox.shrink(),
+                    data: (days) => _ActivityChart(days: days),
+                  ),
+                  const SizedBox(height: 20),
+                  if (profile.weakGrammar.isNotEmpty) ...[
+                    _WeakGrammarCard(areas: profile.weakGrammar),
+                    const SizedBox(height: 20),
+                  ],
+                  if (profile.weakVocabulary.isNotEmpty) ...[
+                    _WeakVocabCard(words: profile.weakVocabulary),
+                    const SizedBox(height: 20),
+                  ],
+                  if (profile.strongGrammar.isNotEmpty) ...[
+                    _StrongGrammarCard(areas: profile.strongGrammar),
+                    const SizedBox(height: 20),
+                  ],
+                  if (profile.frequentTopics.isNotEmpty)
+                    _TopicsCard(topics: profile.frequentTopics),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
+}
 
-  Widget _buildOverviewCards() {
+// ──────────────────────────────────────────────────────────────
+// Stats row
+// ──────────────────────────────────────────────────────────────
+
+class _StatsRow extends StatelessWidget {
+  final LearningProfile profile;
+  const _StatsRow({required this.profile});
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _buildStatCard('Toplam Seans', '24', Icons.play_circle_outline, Colors.blue)),
-        const SizedBox(width: 16),
-        Expanded(child: _buildStatCard('Toplam Dakika', '180', Icons.access_time, Colors.green)),
-        const SizedBox(width: 16),
-        Expanded(child: _buildStatCard('Haftalık Hedef', '85%', Icons.track_changes, Colors.orange)),
+        Expanded(
+          child: _StatCard(
+            label: 'Toplam Pratik',
+            value: '${profile.totalInteractions}',
+            icon: Icons.chat_bubble_outline,
+            color: Colors.blue,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatCard(
+            label: 'Zayıf Alan',
+            value: '${profile.weakGrammar.length + profile.weakVocabulary.length}',
+            icon: Icons.warning_amber_rounded,
+            color: Colors.orange,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _StatCard(
+            label: 'Güçlü Alan',
+            value: '${profile.strongGrammar.length + profile.strongVocabulary.length}',
+            icon: Icons.star_outline,
+            color: Colors.green,
+          ),
+        ),
       ],
     );
   }
+}
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+class _StatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _StatCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 6),
+            Text(
+              value,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Activity chart (son 7 gün)
+// ──────────────────────────────────────────────────────────────
+
+class _ActivityChart extends StatelessWidget {
+  final List<DayActivity> days;
+  const _ActivityChart({required this.days});
+
+  @override
+  Widget build(BuildContext context) {
+    final maxCount = days.map((d) => d.count).fold(0, (a, b) => a > b ? a : b);
+    final maxY = (maxCount < 5 ? 5 : maxCount + 1).toDouble();
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Son 7 Gün — Günlük Pratik',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 160,
+              child: BarChart(
+                BarChartData(
+                  maxY: maxY,
+                  gridData: const FlGridData(show: false),
+                  borderData: FlBorderData(show: false),
+                  titlesData: FlTitlesData(
+                    leftTitles:
+                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    rightTitles:
+                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    topTitles:
+                        const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, _) {
+                          final idx = value.toInt();
+                          if (idx < 0 || idx >= days.length) {
+                            return const Text('');
+                          }
+                          final date = days[idx].date;
+                          final parts = date.split('-');
+                          return Text(
+                            '${parts[2]}/${parts[1]}',
+                            style: const TextStyle(fontSize: 10),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  barGroups: List.generate(days.length, (i) {
+                    final d = days[i];
+                    return BarChartGroupData(
+                      x: i,
+                      barRods: [
+                        BarChartRodData(
+                          toY: d.count.toDouble(),
+                          color: d.count > 0 ? Colors.blue : Colors.grey[300],
+                          width: 18,
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(4),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChartSkeleton extends StatelessWidget {
+  const _ChartSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      child: SizedBox(
+        height: 200,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Weak grammar
+// ──────────────────────────────────────────────────────────────
+
+class _WeakGrammarCard extends StatelessWidget {
+  final List<GrammarArea> areas;
+  const _WeakGrammarCard({required this.areas});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, color: color, size: 24),
+                const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+                const SizedBox(width: 8),
                 Text(
-                  value,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                  ),
+                  'Zayıf Gramer Alanları',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            ...areas.take(6).map((a) => _AreaBar(
+                  label: a.display,
+                  errorRate: a.errorRate,
+                  color: _colorForErrorRate(a.errorRate),
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _colorForErrorRate(double rate) {
+    if (rate >= 0.7) return Colors.red;
+    if (rate >= 0.4) return Colors.orange;
+    return Colors.yellow[700]!;
+  }
+}
+
+class _AreaBar extends StatelessWidget {
+  final String label;
+  final double errorRate;
+  final Color color;
+
+  const _AreaBar({
+    required this.label,
+    required this.errorRate,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(label,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    overflow: TextOverflow.ellipsis),
+              ),
+              Text(
+                '${(errorRate * 100).toInt()}% hata',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: color, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          LinearProgressIndicator(
+            value: errorRate,
+            backgroundColor: Colors.grey[200],
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Weak vocabulary
+// ──────────────────────────────────────────────────────────────
+
+class _WeakVocabCard extends StatelessWidget {
+  final List<VocabArea> words;
+  const _WeakVocabCard({required this.words});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.spellcheck, color: Colors.red, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Tekrar Gereken Kelimeler',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: words.take(10).map((w) {
+                final opacity = 0.4 + (w.errorRate * 0.6);
+                return Chip(
+                  label: Text(w.word),
+                  backgroundColor:
+                      Colors.red.withValues(alpha: opacity.clamp(0.0, 1.0)),
+                  labelStyle: const TextStyle(color: Colors.white),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Strong grammar
+// ──────────────────────────────────────────────────────────────
+
+class _StrongGrammarCard extends StatelessWidget {
+  final List<GrammarArea> areas;
+  const _StrongGrammarCard({required this.areas});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.star, color: Colors.green, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Güçlü Alanlar',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...areas.take(4).map((a) => _AreaBar(
+                  label: a.display,
+                  errorRate: a.errorRate,
+                  color: Colors.green,
+                )),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Topics
+// ──────────────────────────────────────────────────────────────
+
+class _TopicsCard extends StatelessWidget {
+  final List<String> topics;
+  const _TopicsCard({required this.topics});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.topic, color: Colors.purple, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Çalışılan Konular',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: topics
+                  .map((t) => Chip(
+                        label: Text(t),
+                        backgroundColor:
+                            Colors.purple.withValues(alpha: 0.12),
+                      ))
+                  .toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Empty & error states
+// ──────────────────────────────────────────────────────────────
+
+class _EmptyState extends StatelessWidget {
+  final String language;
+  const _EmptyState({required this.language});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 60),
+        child: Column(
+          children: [
+            Icon(Icons.insights, size: 72, color: Colors.grey[300]),
+            const SizedBox(height: 20),
+            Text(
+              'Henüz veri yok',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleLarge
+                  ?.copyWith(color: Colors.grey[600]),
             ),
             const SizedBox(height: 8),
             Text(
-              title,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[600],
-              ),
+              'Pratik yaptıkça AI zayıf ve güçlü\nalanlarını burada gösterir.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: Colors.grey[500]),
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildWeeklyProgressChart() {
+class _ErrorCard extends StatelessWidget {
+  final String message;
+  const _ErrorCard({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
     return Card(
+      color: Colors.red[50],
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(16),
+        child: Row(
           children: [
-            Text(
-              'Haftalık İlerleme',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 200,
-              child: LineChart(
-                LineChartData(
-                  gridData: const FlGridData(show: true),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 40,
-                        getTitlesWidget: (value, meta) {
-                          return Text('${value.toInt()}dk');
-                        },
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          const days = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-                          if (value.toInt() >= 0 && value.toInt() < days.length) {
-                            return Text(days[value.toInt()]);
-                          }
-                          return const Text('');
-                        },
-                      ),
-                    ),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  ),
-                  borderData: FlBorderData(show: true),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: [
-                        const FlSpot(0, 15),
-                        const FlSpot(1, 25),
-                        const FlSpot(2, 20),
-                        const FlSpot(3, 30),
-                        const FlSpot(4, 35),
-                        const FlSpot(5, 10),
-                        const FlSpot(6, 20),
-                      ],
-                      isCurved: true,
-                      color: Colors.blue,
-                      barWidth: 3,                      belowBarData: BarAreaData(
-                        show: true,
-                        color: Colors.blue.withValues(alpha: 0.1),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            const Icon(Icons.error_outline, color: Colors.red),
+            const SizedBox(width: 12),
+            Expanded(child: Text(message)),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSkillsBreakdown() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Beceri Dağılımı',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildSkillProgress('Gramer', 0.75, Colors.blue),
-            const SizedBox(height: 12),
-            _buildSkillProgress('Kelime Bilgisi', 0.60, Colors.green),
-            const SizedBox(height: 12),
-            _buildSkillProgress('Telaffuz', 0.45, Colors.orange),
-            const SizedBox(height: 12),
-            _buildSkillProgress('Konuşma', 0.80, Colors.purple),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSkillProgress(String skill, double progress, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(skill, style: Theme.of(context).textTheme.bodyLarge),
-            Text('${(progress * 100).toInt()}%', style: Theme.of(context).textTheme.bodyLarge),
-          ],
-        ),
-        const SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: progress,
-          backgroundColor: Colors.grey[300],
-          valueColor: AlwaysStoppedAnimation<Color>(color),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAchievementBadges() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Başarı Rozetleri',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                _buildBadge('İlk Adım', Icons.star, Colors.amber, true),
-                _buildBadge('Haftalık Kahraman', Icons.local_fire_department, Colors.orange, true),
-                _buildBadge('Gramer Ustası', Icons.school, Colors.blue, false),
-                _buildBadge('Konuşma Şampiyonu', Icons.mic, Colors.green, false),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBadge(String title, IconData icon, Color color, bool earned) {
-    return Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: earned ? color : Colors.grey[300],
-          ),
-          child: Icon(
-            icon,
-            color: earned ? Colors.white : Colors.grey[600],
-            size: 30,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: earned ? Colors.black : Colors.grey[600],
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRecentActivities() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Son Aktiviteler',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: 5,
-              separatorBuilder: (context, index) => const Divider(),
-              itemBuilder: (context, index) {
-                return _buildActivityItem(
-                  'Gramer Dersi Tamamlandı',
-                  'Present Simple konusunda 95% başarı',
-                  '2 saat önce',
-                  Icons.check_circle,
-                  Colors.green,
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActivityItem(String title, String subtitle, String time, IconData icon, Color color) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(title),
-      subtitle: Text(subtitle),
-      trailing: Text(
-        time,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Colors.grey[600],
         ),
       ),
     );

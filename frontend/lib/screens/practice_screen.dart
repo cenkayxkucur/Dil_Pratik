@@ -3,22 +3,19 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../widgets/language_selector.dart';
 import '../widgets/level_selector.dart';
-import '../models/language.dart';
 import '../screens/home_screen.dart';
 import '../services/api_service.dart';
 import '../services/speech_service.dart';
 import '../services/tts_service.dart';
 import '../services/user_session_service.dart';
 import '../providers/auth_provider.dart';
+import '../providers/language_provider.dart';
 
 enum ChatMode { text, voice }
 
 final voiceInputEnabledProvider = StateProvider<bool>((ref) => false);
 final voiceOutputEnabledProvider = StateProvider<bool>((ref) => false);
 final chatMessagesProvider = StateProvider<List<ChatMessage>>((ref) => []);
-final selectedLevelProvider = StateProvider<LanguageLevel>((ref) => LanguageLevel.A1);
-final selectedLanguageProvider = StateProvider<Language?>((ref) => supportedLanguages.first);
-final communicationLanguageProvider = StateProvider<Language?>((ref) => supportedLanguages.first);
 
 class ChatMessage {
   final String text;

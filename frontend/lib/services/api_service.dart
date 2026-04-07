@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../config/app_config.dart';
 import '../models/user.dart';
 import '../models/lesson.dart';
 import '../models/progress.dart';
@@ -15,7 +16,7 @@ class ApiService {
   ApiService() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: 'http://localhost:8000/api',
+        baseUrl: AppConfig.apiBaseUrl,
         contentType: 'application/json',
       ),
     );
@@ -292,15 +293,7 @@ class ApiService {
         throw Exception('AI chat failed');
       }
     } catch (e) {
-      // Fallback to mock response
-      final responses = [
-        'Harika! Bu konuda daha fazla pratik yapmak ister misiniz?',
-        'Çok güzel bir cümle kurmuşsunuz. Devam edin!',
-        'Bu konuyu daha iyi anlamak için bir örnek verebilir misiniz?',
-        'Mükemmel! Şimdi bu kelimeyi farklı bir cümlede kullanmayı deneyin.',
-        'İyi bir başlangıç! Gramer kurallarına dikkat ederek tekrar deneyin.',
-      ];
-      return responses[DateTime.now().millisecond % responses.length];
+      throw _handleError(e);
     }
   }
 
@@ -381,6 +374,7 @@ class ApiService {
     required String language,
     required String level,
     String? userId,
+    String? communicationLanguage,
   }) async {
     try {
       final response = await _dio.post('/ai/lesson-chat', data: {
@@ -391,7 +385,7 @@ class ApiService {
         'user_id': userId ?? 'anonymous_user',
         'language': language,
         'level': level,
-        'communication_language': 'turkish', // Default to Turkish for explanations
+        if (communicationLanguage != null) 'communication_language': communicationLanguage,
       });
       
       return response.data['response'] ?? 'Yanıt alınamadı';

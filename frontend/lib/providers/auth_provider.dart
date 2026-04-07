@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/user.dart';
+import '../services/auth_service.dart';
 import '../services/user_session_service.dart';
 
-// Simple auth state provider without Firebase
+final authServiceProvider = Provider<AuthService>((ref) => AuthService());
+
+/// Giriş yapmış kullanıcı; null ise oturum açılmamış demektir.
 final authStateProvider = StateProvider<User?>((ref) => null);
 
 final authControllerProvider =
@@ -13,71 +16,61 @@ final authControllerProvider =
 class AuthController extends StateNotifier<AsyncValue<User?>> {
   final Ref _ref;
 
-  AuthController(this._ref) : super(const AsyncValue.data(null)) {
-    // AuthService can be initialized when needed
+  AuthController(this._ref) : super(const AsyncValue.loading()) {
+    _restoreSession();
   }
-  Future<void> signIn(String email, String password) async {
+
+  AuthService get _service => _ref.read(authServiceProvider);
+
+  /// Uygulama başlangıcında kayıtlı token ile /auth/me'yi çağırır.
+  /// Başarılıysa kullanıcıyı yükler, değilse token'ı temizler.
+  Future<void> _restoreSession() async {
     try {
-      state = const AsyncValue.loading();
-      // For now, create a mock user for testing
-      final user = User(
-        id: 1,
-        email: email,
-        username: 'Test User',
-        isActive: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      final user = await _service.getMe();
       _ref.read(authStateProvider.notifier).state = user;
       state = AsyncValue.data(user);
-      
-      // Handle user session transition
-      UserSessionService.onUserSignIn(user);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-    }
-  }
-  Future<void> signUp(String email, String password, String username) async {
-    try {
-      state = const AsyncValue.loading();
-      // For now, create a mock user for testing
-      final user = User(
-        id: 2,
-        email: email,
-        username: username,
-        isActive: true,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      _ref.read(authStateProvider.notifier).state = user;
-      state = AsyncValue.data(user);
-      
-      // Handle user session transition
-      UserSessionService.onUserSignIn(user);
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-    }
-  }
-  Future<void> signOut() async {
-    try {
+      if (user != null) UserSessionService.onUserSignIn(user);
+    } catch (_) {
       _ref.read(authStateProvider.notifier).state = null;
       state = const AsyncValue.data(null);
-      
-      // Handle user session transition
-      UserSessionService.onUserSignOut();
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
     }
   }
 
-  Future<void> resetPassword(String email) async {
+  Future<void> signIn(String email, String password) async {
+    state = const AsyncValue.loading();
     try {
-      state = const AsyncValue.loading();
-      // Mock password reset - in real app would call backend
-      await Future.delayed(const Duration(seconds: 1));
-      state = const AsyncValue.data(null);
+      final result = await _service.signIn(email, password);
+      _ref.read(authStateProvider.notifier).state = result.user;
+      state = AsyncValue.data(result.user);
+      UserSessionService.onUserSignIn(result.user);
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<void> signUp(String email, String password, String username) async {
+    state = const AsyncValue.loading();
+    try {
+      final result = await _service.signUp(email, password, username);
+      _ref.read(authStateProvider.notifier).state = result.user;
+      state = AsyncValue.data(result.user);
+      UserSessionService.onUserSignIn(result.user);
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<void> signOut() async {
+    try {
+      await _service.signOut();
+      _ref.read(authStateProvider.notifier).state = null;
+      state = const AsyncValue.data(null);
+      UserSessionService.onUserSignOut();
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+      rethrow;
     }
   }
 }

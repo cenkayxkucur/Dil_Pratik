@@ -1,43 +1,44 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../models/progress.dart';
 import '../services/progress_service.dart';
+import '../services/user_session_service.dart';
 
 final progressServiceProvider =
     Provider<ProgressService>((ref) => ProgressService());
 
-final progressProvider =
-    StateNotifierProvider<ProgressNotifier, AsyncValue<List<Progress>>>((ref) {
-  return ProgressNotifier(ref.watch(progressServiceProvider));
-});
+// ──────────────────────────────────────────────────────────────
+// Öğrenme Profili (zayıf/güçlü alanlar)
+// ──────────────────────────────────────────────────────────────
 
-class ProgressNotifier extends StateNotifier<AsyncValue<List<Progress>>> {
-  final ProgressService _progressService;
+final learningProfileProvider = FutureProvider.family<LearningProfile, String>(
+  (ref, language) async {
+    final service = ref.watch(progressServiceProvider);
+    final userId = UserSessionService.getCurrentUserId();
+    return service.getProfile(userId, language);
+  },
+);
 
-  ProgressNotifier(this._progressService) : super(const AsyncValue.loading()) {
-    _fetchProgress();
-  }
+// ──────────────────────────────────────────────────────────────
+// Günlük aktivite (grafik için)
+// ──────────────────────────────────────────────────────────────
 
-  Future<void> _fetchProgress() async {
-    try {
-      state = const AsyncValue.loading();
-      final progress = await _progressService.getProgress();
-      state = AsyncValue.data(progress);
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-    }
-  }
+class ActivityParams {
+  final String language;
+  final int days;
+  const ActivityParams(this.language, this.days);
 
-  Future<void> createProgress(
-      int lessonId, double score, bool completed) async {
-    try {
-      await _progressService.createProgress(lessonId, score, completed);
-      await _fetchProgress();
-    } catch (e) {
-      state = AsyncValue.error(e, StackTrace.current);
-    }
-  }
+  @override
+  bool operator ==(Object other) =>
+      other is ActivityParams && other.language == language && other.days == days;
 
-  Future<void> refresh() async {
-    await _fetchProgress();
-  }
+  @override
+  int get hashCode => Object.hash(language, days);
 }
+
+final activityProvider =
+    FutureProvider.family<List<DayActivity>, ActivityParams>(
+  (ref, params) async {
+    final service = ref.watch(progressServiceProvider);
+    final userId = UserSessionService.getCurrentUserId();
+    return service.getActivity(userId, params.language, days: params.days);
+  },
+);

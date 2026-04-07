@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
 from typing import List, Optional, Dict
-from ..models.structured_models import LanguageLevel, GrammarTopic, Lesson
+from ..models.models import LanguageLevel, GrammarTopic, Lesson
 from ..schemas.structured_lesson import (
     LanguageLevelResponse, 
     GrammarTopicResponse, 

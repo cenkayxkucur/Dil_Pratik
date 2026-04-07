@@ -7,9 +7,11 @@ from app.api.auth_endpoints import router as auth_router
 from app.api.ai_endpoints import router as ai_router
 from app.api.lesson_endpoints import router as lesson_router
 from app.api.structured_lesson_endpoints import router as structured_lesson_router
-from app.api.test_endpoints import router as test_router
 from app.database import engine
 from app.utils.database import Base
+
+# Tüm model sınıflarını import et — Base.metadata'ya kaydedilmeleri için gerekli
+import app.models.models  # noqa: F401
 
 # Veritabanı tablolarını oluştur
 Base.metadata.create_all(bind=engine)
@@ -37,7 +39,6 @@ app.include_router(conversation_router, prefix="/api/conversation", tags=["conve
 app.include_router(grammar_router, prefix="/api/grammar", tags=["grammar"])
 app.include_router(ai_router, prefix="/api/ai", tags=["ai"])
 app.include_router(main_router, prefix="/api/main", tags=["main"])
-app.include_router(test_router, prefix="/api/test", tags=["test"])
 
 @app.get("/")
 async def root():

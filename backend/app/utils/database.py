@@ -1,20 +1,6 @@
-from sqlalchemy import create_engine
+# Geriye dönük uyumluluk için tüm database nesnelerini app.database'den re-export eder.
+# Yeni kod doğrudan app.database'i kullanmalı.
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
-
-from .config import get_settings
-
-settings = get_settings()
-
-engine = create_engine(settings.DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from ..database import engine, SessionLocal, get_db  # noqa: F401
 
 Base = declarative_base()
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close() 

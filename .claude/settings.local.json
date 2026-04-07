@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(venv/Scripts/python.exe -c ':*)",
+      "Bash(\"venv/Scripts/python.exe\" -m pytest --collect-only)",
+      "Bash(\"venv/Scripts/python.exe\" -c \"import sqlalchemy; print\\(sqlalchemy.__version__\\)\")",
+      "Bash(rm:*)",
+      "Bash(python -m venv venv)",
+      "Bash(venv/Scripts/pip install:*)",
+      "Bash(venv/Scripts/python.exe -c \"import sqlalchemy; print\\('sqlalchemy:', sqlalchemy.__version__\\)\")",
+      "Bash(sed:*)",
+      "Bash(venv/Scripts/python.exe -c \"from main import app; print\\('OK'\\)\")",
+      "Bash(rm -f dilpratik.db)",
+      "Bash(venv/Scripts/python.exe scripts/seed_content.py)",
+      "Bash(venv/Scripts/python:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(cmd:*)",
+      "Read(//c/Users/cenka/AppData/Local/pub/cache/**)",
+      "Read(//c/flutter/bin/**)",
+      "Read(//c/Users/cenka/flutter/bin/**)",
+      "Bash(\"/c/Users/cenka/develop/flutter_windows_3.32.2-stable/flutter/bin/flutter\" analyze:*)",
+      "Read(//c/Users/cenka/**)",
+      "Read(//c/src/flutter/**)",
+      "Read(//c/scr/flutter/**)",
+      "Bash(powershell:*)"
+    ]
+  }
+}
