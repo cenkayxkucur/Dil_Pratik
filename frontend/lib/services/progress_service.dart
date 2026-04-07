@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../config/app_config.dart';
+import 'token_manager.dart';
 
 class LearningProfile {
   final int totalInteractions;
@@ -203,6 +204,12 @@ class ProgressService {
           options.headers['Authorization'] = 'Bearer $token';
         }
         return handler.next(options);
+      },
+      onError: (error, handler) async {
+        if (error.response?.statusCode == 401) {
+          await TokenManager.handleUnauthorized();
+        }
+        return handler.next(error);
       },
     ));
   }

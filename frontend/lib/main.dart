@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'models/user.dart';
 import 'providers/auth_provider.dart';
+import 'services/token_manager.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -100,6 +101,12 @@ class MyApp extends ConsumerWidget {
         ),
       );
     }
+
+    // Token süresi dolduğunda (401) → oturumu kapat, router /login'e yönlendirir
+    TokenManager.setOnExpired(() async {
+      ref.read(authStateProvider.notifier).state = null;
+      await ref.read(authServiceProvider).signOut();
+    });
 
     final router = ref.watch(_routerProvider);
 

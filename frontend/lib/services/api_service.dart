@@ -4,6 +4,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../config/app_config.dart';
 import '../models/user.dart';
+import 'token_manager.dart';
 import '../models/lesson.dart';
 import '../models/progress.dart';
 import '../models/language.dart';
@@ -29,6 +30,12 @@ class ApiService {
             options.headers['Authorization'] = 'Bearer $token';
           }
           return handler.next(options);
+        },
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 401) {
+            await TokenManager.handleUnauthorized();
+          }
+          return handler.next(error);
         },
       ),
     );

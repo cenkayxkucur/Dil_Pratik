@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../widgets/language_selector.dart';
 import '../widgets/level_selector.dart';
-import '../screens/home_screen.dart';
 import '../services/api_service.dart';
 import '../services/speech_service.dart';
 import '../services/tts_service.dart';
 import '../services/user_session_service.dart';
-import '../providers/auth_provider.dart';
 import '../providers/language_provider.dart';
 
 enum ChatMode { text, voice }
@@ -75,9 +74,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.home),
-            onPressed: () => Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const HomeScreen()),
-            ),
+            onPressed: () => context.go('/'),
           ),
         ],
       ),
@@ -333,7 +330,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       });      final communicationLanguage = ref.read(communicationLanguageProvider);
       _speechService.startListening(
         language: communicationLanguage?.name ?? communicationLanguage?.code ?? 'tr',onResult: (result) {
-          print('📝 PracticeScreen received speech result: "$result"'); // Debug log
           if (result.isNotEmpty) {
             _messageController.text = result;
             // Automatically send the message if it's not empty
@@ -345,7 +341,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             _isListening = false;
           });
         },        onError: (error) {
-          print('❌ PracticeScreen received speech error: $error'); // Debug log
           _showErrorSnackBar(
             'Ses tanıma hatası: $error',
             action: SnackBarAction(
