@@ -61,14 +61,9 @@ class UserSessionService {
     _currentUserId = userId;
   }
   
-  /// Handle user sign in - switch from anonymous to authenticated ID
+  /// Handle user sign in - authenticated user ID'yi set et
   static void onUserSignIn(User user) {
-    // Optionally migrate conversation history from anonymous session
-    // to authenticated user (this would require backend support)
-    final oldSessionId = _currentUserId;
-    _currentUserId = null; // Reset to get new authenticated ID
-    
-    // Session geçişi tamamlandı (oldSessionId -> authenticated ID)
+    _currentUserId = 'auth_user_${user.id}';
   }
   
   /// Handle user sign out - switch to new anonymous session

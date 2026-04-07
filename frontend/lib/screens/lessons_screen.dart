@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../models/language.dart';
+import '../providers/language_provider.dart';
 import '../widgets/language_selector.dart';
-import '../screens/home_screen.dart';
 import 'structured_level_lessons_screen.dart';
 
 class LessonsScreen extends ConsumerWidget {
@@ -55,15 +55,18 @@ class LessonsScreen extends ConsumerWidget {
                   return Card(
                     elevation: 4,
                     child: InkWell(
-                      onTap: () {                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => StructuredLevelLessonsScreen(
-                              language: selectedLanguage!,
-                              level: level,
-                            ),
-                          ),
-                        );
-                      },
+                      onTap: selectedLanguage == null
+                          ? null
+                          : () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => StructuredLevelLessonsScreen(
+                                    language: selectedLanguage,
+                                    level: level,
+                                  ),
+                                ),
+                              );
+                            },
                       child: Padding(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(

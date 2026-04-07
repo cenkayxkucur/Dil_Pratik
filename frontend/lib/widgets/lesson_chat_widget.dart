@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../models/structured_lesson.dart';
 import '../services/api_service.dart';
+import '../services/user_session_service.dart';
 
 class LessonChatWidget extends ConsumerStatefulWidget {
   final StructuredLessonResponse lesson;
@@ -113,6 +114,7 @@ class _LessonChatWidgetState extends ConsumerState<LessonChatWidget>
         lessonTitle: widget.lesson.title,
         language: widget.language,
         level: widget.level,
+        userId: UserSessionService.getCurrentUserId(),
       );
 
       // Add AI response
@@ -151,7 +153,7 @@ class _LessonChatWidgetState extends ConsumerState<LessonChatWidget>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.1),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
