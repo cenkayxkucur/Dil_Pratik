@@ -25,9 +25,6 @@ if _sentry_dsn:
         environment=os.getenv("ENVIRONMENT", "production"),
     )
 
-# Veritabanı tablolarını oluştur
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(
     title="Dil Pratik API",
     description="AI destekli dil öğrenme platformu backend API",
@@ -60,6 +57,17 @@ app.include_router(grammar_router, prefix="/api/grammar", tags=["grammar"])
 app.include_router(ai_router, prefix="/api/ai", tags=["ai"])
 app.include_router(main_router, prefix="/api/main", tags=["main"])
 app.include_router(vocabulary_router, prefix="/api/vocabulary", tags=["vocabulary"])
+
+@app.on_event("startup")
+async def startup_event():
+    import logging
+    logger = logging.getLogger("uvicorn.error")
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created/verified successfully.")
+    except Exception as exc:
+        logger.error(f"Database startup error: {exc}")
+
 
 @app.get("/")
 async def root():

@@ -21,6 +21,7 @@ elif SQLALCHEMY_DATABASE_URL.startswith("postgresql"):
         pool_pre_ping=True,
         pool_recycle=300,
         echo=False,
+        connect_args={"connect_timeout": 10},
     )
 else:
     engine = create_engine(SQLALCHEMY_DATABASE_URL)
