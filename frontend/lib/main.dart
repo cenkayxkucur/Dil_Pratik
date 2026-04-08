@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'models/user.dart';
 import 'providers/auth_provider.dart';
+import 'providers/theme_provider.dart';
+import 'providers/ui_language_provider.dart';
 import 'services/token_manager.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
@@ -13,11 +16,54 @@ import 'screens/lesson_screen.dart';
 import 'screens/practice_screen.dart';
 import 'screens/error_review_screen.dart';
 import 'screens/progress_dashboard_screen.dart';
+import 'screens/vocabulary_screen.dart';
+
+const _sentryDsn = String.fromEnvironment('SENTRY_DSN', defaultValue: '');
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: MyApp()));
+
+  if (_sentryDsn.isNotEmpty) {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = _sentryDsn;
+        options.tracesSampleRate = 0.1;
+        options.environment = const String.fromEnvironment(
+          'ENVIRONMENT',
+          defaultValue: 'production',
+        );
+      },
+      appRunner: () => runApp(const ProviderScope(child: MyApp())),
+    );
+  } else {
+    runApp(const ProviderScope(child: MyApp()));
+  }
 }
+
+// ──────────────────────────────────────────────────────────────
+// Slide + fade page transition helper
+// ──────────────────────────────────────────────────────────────
+
+CustomTransitionPage<void> _slideFadePage(GoRouterState state, Widget child) =>
+    CustomTransitionPage<void>(
+      key: state.pageKey,
+      child: child,
+      transitionDuration: const Duration(milliseconds: 220),
+      reverseTransitionDuration: const Duration(milliseconds: 180),
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(parent: animation, curve: Curves.easeOut);
+        return FadeTransition(
+          opacity: curved,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.04, 0),
+              end: Offset.zero,
+            ).animate(curved),
+            child: child,
+          ),
+        );
+      },
+    );
 
 /// GoRouter'ı Riverpod ile senkronize eden notifier.
 class _RouterNotifier extends ChangeNotifier {
@@ -50,37 +96,44 @@ final _routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/',
-        builder: (context, state) => const HomeScreen(),
+        pageBuilder: (context, state) => _slideFadePage(state, const HomeScreen()),
       ),
       GoRoute(
         path: '/login',
-        builder: (context, state) => const LoginScreen(),
+        pageBuilder: (context, state) => _slideFadePage(state, const LoginScreen()),
       ),
       GoRoute(
         path: '/register',
-        builder: (context, state) => const RegisterScreen(),
+        pageBuilder: (context, state) => _slideFadePage(state, const RegisterScreen()),
       ),
       GoRoute(
         path: '/lessons',
-        builder: (context, state) => const LessonsScreen(),
+        pageBuilder: (context, state) => _slideFadePage(state, const LessonsScreen()),
       ),
       GoRoute(
         path: '/practice',
-        builder: (context, state) => const PracticeScreen(),
+        pageBuilder: (context, state) => _slideFadePage(state, const PracticeScreen()),
       ),
       GoRoute(
         path: '/error-review',
-        builder: (context, state) => const ErrorReviewScreen(),
+        pageBuilder: (context, state) => _slideFadePage(state, const ErrorReviewScreen()),
       ),
       GoRoute(
         path: '/progress',
-        builder: (context, state) => const ProgressDashboardScreen(),
+        pageBuilder: (context, state) =>
+            _slideFadePage(state, const ProgressDashboardScreen()),
       ),
       GoRoute(
         path: '/lesson/:id',
-        builder: (context, state) => LessonScreen(
-          lessonId: int.parse(state.pathParameters['id']!),
+        pageBuilder: (context, state) => _slideFadePage(
+          state,
+          LessonScreen(lessonId: int.parse(state.pathParameters['id']!)),
         ),
+      ),
+      GoRoute(
+        path: '/vocabulary',
+        pageBuilder: (context, state) =>
+            _slideFadePage(state, const VocabularyScreen()),
       ),
     ],
   );
@@ -109,14 +162,26 @@ class MyApp extends ConsumerWidget {
     });
 
     final router = ref.watch(_routerProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
-    return MaterialApp.router(
-      title: 'Dil Pratik',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+    return FocusTraversalGroup(
+      policy: const AppFocusTraversalPolicy(),
+      child: MaterialApp.router(
+        title: 'Dil Pratik',
+        themeMode: themeMode,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+          useMaterial3: true,
+        ),
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.blue,
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
+        ),
+        routerConfig: router,
       ),
-      routerConfig: router,
     );
   }
 }

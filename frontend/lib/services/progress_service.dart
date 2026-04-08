@@ -191,6 +191,42 @@ class ReviewQueue {
   }
 }
 
+class StreakData {
+  final int currentStreak;
+  final int longestStreak;
+  final int todayCount;
+  final int dailyGoalTarget;
+  final int totalDaysActive;
+
+  const StreakData({
+    required this.currentStreak,
+    required this.longestStreak,
+    required this.todayCount,
+    required this.dailyGoalTarget,
+    required this.totalDaysActive,
+  });
+
+  double get todayProgress =>
+      dailyGoalTarget > 0 ? (todayCount / dailyGoalTarget).clamp(0.0, 1.0) : 0.0;
+  bool get goalCompleted => todayCount >= dailyGoalTarget;
+
+  factory StreakData.empty() => const StreakData(
+        currentStreak: 0,
+        longestStreak: 0,
+        todayCount: 0,
+        dailyGoalTarget: 5,
+        totalDaysActive: 0,
+      );
+
+  factory StreakData.fromJson(Map<String, dynamic> json) => StreakData(
+        currentStreak: json['current_streak'] as int? ?? 0,
+        longestStreak: json['longest_streak'] as int? ?? 0,
+        todayCount: json['today_count'] as int? ?? 0,
+        dailyGoalTarget: json['daily_goal_target'] as int? ?? 5,
+        totalDaysActive: json['total_days_active'] as int? ?? 0,
+      );
+}
+
 class ProgressService {
   final _storage = const FlutterSecureStorage();
   late final Dio _dio;
@@ -235,6 +271,30 @@ class ProgressService {
       return ReviewQueue.fromJson(response.data as Map<String, dynamic>);
     } catch (_) {
       return ReviewQueue.empty();
+    }
+  }
+
+  Future<StreakData> getStreak(String userId, String language) async {
+    try {
+      final response = await _dio.get(
+        '/ai/streak/$userId',
+        queryParameters: {'language': language},
+      );
+      return StreakData.fromJson(response.data as Map<String, dynamic>);
+    } catch (_) {
+      return StreakData.empty();
+    }
+  }
+
+  Future<bool> setDailyGoal(String userId, String language, int target) async {
+    try {
+      await _dio.post(
+        '/ai/streak/goal',
+        data: {'user_id': userId, 'language': language, 'daily_goal_target': target},
+      );
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 

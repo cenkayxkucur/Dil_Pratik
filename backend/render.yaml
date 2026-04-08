@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: dil-pratik-backend
+    env: python
+    region: frankfurt  # EU kullanıcılar için en yakın
+    plan: free         # Başlangıç için ücretsiz tier
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        sync: false          # Render dashboard'dan manuel set edilecek
+      - key: SECRET_KEY
+        generateValue: true  # Render otomatik güçlü değer üretir
+      - key: REFRESH_SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        sync: false          # Vercel URL'i buraya girilecek
+      - key: ENVIRONMENT
+        value: production
+      - key: SENTRY_DSN
+        sync: false          # Sentry kurulduktan sonra eklenir

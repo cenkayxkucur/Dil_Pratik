@@ -3,8 +3,10 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../models/language.dart';
 import '../models/structured_lesson.dart';
 import '../services/api_service.dart';
+import '../services/cache_service.dart';
 import '../widgets/state_template.dart';
 import '../widgets/lesson_chat_widget.dart';
+import 'exercise_screen.dart';
 
 class StructuredLevelLessonsScreen extends ConsumerWidget {
   final Language language;
@@ -320,12 +322,44 @@ class _LessonCardState extends State<_LessonCard> with TickerProviderStateMixin 
                   bottomRight: Radius.circular(12),
                 ),
               ),
-              child: Text(
-                widget.lesson.content,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.6,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.lesson.content,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.6,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ExerciseScreen(
+                            lessonContent: widget.lesson.content,
+                            lessonTitle: widget.lesson.title,
+                            language: widget.language.code,
+                            level: widget.level.code,
+                          ),
+                        ),
+                      ),
+                      icon: const Icon(Icons.quiz_outlined, size: 18),
+                      label: const Text('Egzersiz Yap'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade600,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -335,13 +369,44 @@ class _LessonCardState extends State<_LessonCard> with TickerProviderStateMixin 
   }
 }
 
-// Providers
-final _levelTopicsProvider = FutureProvider.family<LanguageLevelWithTopics, (String, String)>((ref, tuple) async {
+// Providers (cache destekli)
+final _cacheServiceProvider = Provider<CacheService>((ref) => CacheService());
+
+final _levelTopicsProvider =
+    FutureProvider.family<LanguageLevelWithTopics, (String, String)>(
+        (ref, tuple) async {
+  final cache = ref.watch(_cacheServiceProvider);
+  final cacheKey = CacheKeys.levelTopics(tuple.$1, tuple.$2);
+
+  // Cache'den dene (1 saat TTL)
+  final cached = await cache.get<LanguageLevelWithTopics>(
+    cacheKey,
+    (json) => LanguageLevelWithTopics.fromJson(json as Map<String, dynamic>),
+    ttl: const Duration(hours: 1),
+  );
+  if (cached != null) return cached;
+
+  // API'den çek, cache'e yaz
   final apiService = ApiService();
-  return await apiService.getLanguageLevelWithTopics(tuple.$1, tuple.$2);
+  final result = await apiService.getLanguageLevelWithTopics(tuple.$1, tuple.$2);
+  await cache.set(cacheKey, result.toJson());
+  return result;
 });
 
-final _topicLessonsProvider = FutureProvider.family<GrammarTopicWithLessons, int>((ref, topicId) async {
+final _topicLessonsProvider =
+    FutureProvider.family<GrammarTopicWithLessons, int>((ref, topicId) async {
+  final cache = ref.watch(_cacheServiceProvider);
+  final cacheKey = CacheKeys.topicLessons(topicId);
+
+  final cached = await cache.get<GrammarTopicWithLessons>(
+    cacheKey,
+    (json) => GrammarTopicWithLessons.fromJson(json as Map<String, dynamic>),
+    ttl: const Duration(minutes: 30),
+  );
+  if (cached != null) return cached;
+
   final apiService = ApiService();
-  return await apiService.getGrammarTopicWithLessons(topicId);
+  final result = await apiService.getGrammarTopicWithLessons(topicId);
+  await cache.set(cacheKey, result.toJson());
+  return result;
 });

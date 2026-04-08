@@ -14,6 +14,7 @@ class ChatRequest(BaseModel):
     level: str
     user_id: str
     communication_language: Optional[str] = None
+    session_type: Optional[str] = "conversation"  # "conversation" | "pronunciation"
 
 
 class ChatResponse(BaseModel):
@@ -53,9 +54,18 @@ class LessonChatResponse(BaseModel):
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_ai(request: ChatRequest, db: Session = Depends(get_db)):
     try:
+        # Telaffuz modunda mesajı AI'ya göndermeden önce bağlam ekle
+        message = request.message
+        if request.session_type == "pronunciation":
+            message = (
+                f"[TELAFFUZ DEĞERLENDİRME MODU] Kullanıcının söylediği: '{request.message}'. "
+                "Bu bir konuşma pratiği değil, telaffuz değerlendirmesi. Kullanıcının telaffuzunu değerlendir, "
+                "doğru sesletimi açıkla ve ardından pratik yapmaları için yeni bir kelime veya kısa cümle ver."
+            )
+
         response = ai_service.get_conversation_response(
             user_id=request.user_id,
-            message=request.message,
+            message=message,
             language=request.language,
             level=request.level,
             db=db,
@@ -358,6 +368,230 @@ async def get_review_queue(
             "weak_grammar": weak_grammar,
             "weak_vocabulary": weak_vocab,
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/streak/{user_id}")
+async def get_streak(
+    user_id: str,
+    language: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Kullanıcının streak ve günlük hedef bilgisini döndür.
+    Streak, LearningInteraction tablosundan anlık hesaplanır.
+    """
+    try:
+        from ..models.models import LearningInteraction, UserStreak
+        from datetime import datetime, timedelta, date
+
+        today = date.today()
+        today_str = today.isoformat()
+
+        # Bugünkü etkileşim sayısı
+        today_start = datetime.combine(today, datetime.min.time())
+        today_count = (
+            db.query(LearningInteraction)
+            .filter(
+                LearningInteraction.user_id == user_id,
+                LearningInteraction.language == language,
+                LearningInteraction.created_at >= today_start,
+            )
+            .count()
+        )
+
+        # Tüm aktif günleri bul
+        rows = (
+            db.query(LearningInteraction.created_at)
+            .filter(
+                LearningInteraction.user_id == user_id,
+                LearningInteraction.language == language,
+            )
+            .all()
+        )
+        active_days = set()
+        for (dt,) in rows:
+            if dt:
+                active_days.add(dt.strftime("%Y-%m-%d"))
+
+        total_days_active = len(active_days)
+
+        # Güncel streak hesapla: bugünden veya dünden başla
+        def calc_streak(start: date) -> int:
+            count = 0
+            check = start
+            while check.isoformat() in active_days:
+                count += 1
+                check -= timedelta(days=1)
+            return count
+
+        # Bugün aktivite varsa bugünden, yoksa dünden başla (seri korunuyor)
+        if today_str in active_days:
+            current_streak = calc_streak(today)
+        else:
+            yesterday = today - timedelta(days=1)
+            current_streak = calc_streak(yesterday)
+
+        # Streak kaydını al veya oluştur
+        streak_record = (
+            db.query(UserStreak)
+            .filter_by(user_id=user_id, language=language)
+            .first()
+        )
+        if not streak_record:
+            streak_record = UserStreak(
+                user_id=user_id,
+                language=language,
+                longest_streak=current_streak,
+            )
+            db.add(streak_record)
+        else:
+            if current_streak > streak_record.longest_streak:
+                streak_record.longest_streak = current_streak
+
+        streak_record.current_streak = current_streak
+        streak_record.last_activity_date = max(active_days) if active_days else None
+        streak_record.total_days_active = total_days_active
+        db.commit()
+
+        return {
+            "success": True,
+            "current_streak": current_streak,
+            "longest_streak": streak_record.longest_streak,
+            "today_count": today_count,
+            "daily_goal_target": streak_record.daily_goal_target,
+            "total_days_active": total_days_active,
+            "last_activity_date": streak_record.last_activity_date,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class ExerciseRequest(BaseModel):
+    lesson_content: str
+    language: str
+    level: str
+
+
+@router.post("/generate-exercises")
+async def generate_exercises(request: ExerciseRequest):
+    """
+    Ders içeriğinden egzersiz soruları üret.
+    Her türden 2 adet: multiple_choice, fill_blank, translation.
+    """
+    try:
+        import json as json_lib
+
+        prompt = f"""
+Aşağıdaki {request.language} dili {request.level} seviyesi ders içeriğine dayanarak egzersiz soruları üret.
+Her türden tam olarak 2 soru üret. JSON formatında döndür.
+
+Ders içeriği:
+{request.lesson_content[:1500]}
+
+Şu formatta JSON döndür (markdown veya ek açıklama olmadan, sadece JSON):
+{{
+  "exercises": [
+    {{
+      "type": "multiple_choice",
+      "question": "soru metni",
+      "options": ["A seçenek", "B seçenek", "C seçenek", "D seçenek"],
+      "correct_answer": "doğru seçenek (options içindeki tam metin)",
+      "explanation": "kısa açıklama"
+    }},
+    {{
+      "type": "multiple_choice",
+      "question": "ikinci soru",
+      "options": ["A", "B", "C", "D"],
+      "correct_answer": "doğru",
+      "explanation": "açıklama"
+    }},
+    {{
+      "type": "fill_blank",
+      "sentence": "Boşluklu cümle, boşluk ___ ile gösterilir",
+      "answer": "boşluğa gelen kelime",
+      "hint": "ipucu (gramer kuralı veya kategori)"
+    }},
+    {{
+      "type": "fill_blank",
+      "sentence": "İkinci boşluklu cümle ___.",
+      "answer": "cevap",
+      "hint": "ipucu"
+    }},
+    {{
+      "type": "translation",
+      "source_text": "kaynak dildeki cümle",
+      "source_language": "kaynak dil",
+      "target_language": "{request.language}",
+      "expected_answer": "beklenen çeviri",
+      "alternatives": ["alternatif kabul edilebilir çeviri"]
+    }},
+    {{
+      "type": "translation",
+      "source_text": "ikinci cümle",
+      "source_language": "kaynak dil",
+      "target_language": "{request.language}",
+      "expected_answer": "çeviri",
+      "alternatives": []
+    }}
+  ]
+}}
+"""
+        if not ai_service.model:
+            raise HTTPException(status_code=503, detail="AI servisi kullanılamıyor")
+
+        response = ai_service.model.generate_content(prompt)
+        text = (response.text or "").strip()
+        if text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
+        text = text.strip()
+
+        data = json_lib.loads(text)
+        return {"success": True, "exercises": data.get("exercises", [])}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class GoalUpdateRequest(BaseModel):
+    user_id: str
+    language: str
+    daily_goal_target: int
+
+
+@router.post("/streak/goal")
+async def set_daily_goal(
+    request: GoalUpdateRequest,
+    db: Session = Depends(get_db),
+):
+    """Günlük hedef etkileşim sayısını güncelle."""
+    try:
+        from ..models.models import UserStreak
+
+        if request.daily_goal_target < 1 or request.daily_goal_target > 100:
+            raise HTTPException(status_code=400, detail="Hedef 1-100 arasında olmalı")
+
+        streak_record = (
+            db.query(UserStreak)
+            .filter_by(user_id=request.user_id, language=request.language)
+            .first()
+        )
+        if not streak_record:
+            streak_record = UserStreak(
+                user_id=request.user_id,
+                language=request.language,
+                daily_goal_target=request.daily_goal_target,
+            )
+            db.add(streak_record)
+        else:
+            streak_record.daily_goal_target = request.daily_goal_target
+
+        db.commit()
+        return {"success": True, "daily_goal_target": request.daily_goal_target}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

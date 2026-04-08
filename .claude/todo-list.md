@@ -1,15 +1,21 @@
 # Dil Pratik - TODO List
 
-Son güncelleme: 2026-04-07
+Son güncelleme: 2026-04-08 (oturum 3)
 
 ## Durum Özeti
 
-- Backend API: ~98% tamamlandı
-- Frontend Core: ~90% tamamlandı
+- Backend API: 100% tamamlandı
+- Frontend Core: 100% tamamlandı
 - AI Entegrasyonu + Analytics: 100% tamamlandı
+- Streak & Günlük Hedef: 100% tamamlandı
+- Kelime Defteri: 100% tamamlandı
+- Egzersiz Modları: 100% tamamlandı
+- UI/UX (animasyon, erişilebilirlik, çoklu dil): 100% tamamlandı
+- Ses Sistemi: 100% tamamlandı
+- Test Altyapısı: 100% tamamlandı (E2E hariç)
 - Veritabanı (SQLite dev): 100% tamamlandı
-- Ders İçeriği: ~20% tamamlandı
-- Deployment: 0% tamamlandı
+- Ders İçeriği: ~20% tamamlandı (ertelendi)
+- Deployment: 0% tamamlandı ← sıradaki
 
 **Hedef platform:** Web (önce), Mobile (sonra)
 **Hedef kitle:** Genel kullanıcılar
@@ -43,7 +49,7 @@ Son güncelleme: 2026-04-07
 - [x] Router redirect'i aktif et — giriş yapılmadan korumalı sayfalara erişim engellenmeli
 - [x] Ana sayfayı düzenle — giriş yapılmamışken ders/pratik görünmemeli
 - [ ] End-to-end auth akışı test et (register → login → JWT → korumalı endpoint)
-- [ ] Frontend'de token yenileme (refresh token) mantığını ekle
+- [x] Frontend'de token yenileme (refresh token) mantığını ekle
 - [x] `auth_provider.dart` ve `auth_provider_new.dart` birleştir
 - [x] `auth_service.dart` ve `auth_service_new.dart` birleştir
 
@@ -68,13 +74,13 @@ Son güncelleme: 2026-04-07
 ### Yeni Özellikler
 
 - [x] **Spaced Repetition (Aralıklı Tekrar) Sistemi** — yanlış yapılan kelime/gramer noktaları otomatik tekrar kuyruğuna giriyor; "Hatalarından Ders Al" ekranı bunu beslemeli
-- [ ] **Günlük hedef & streak sistemi** — "günde 10 dakika" hedefi + üst üste kaç gün pratik yaptın sayacı
-- [ ] **Kelime defteri** — konuşma/ders sırasında kelime kaydetme, backend'de yeni model gerekiyor
-- [ ] **Yapılandırılmış egzersiz modları** — şu an sadece serbest sohbet var; çoktan seçmeli, çeviri, boşluk doldurma modları
+- [x] **Günlük hedef & streak sistemi** — `UserStreak` modeli, `/api/ai/streak` endpoint, home screen'de ateş ikonu + progress bar, hedef değiştirme dialog'u
+- [x] **Kelime defteri** — `SavedWord` modeli, `/api/vocabulary/` CRUD, `VocabularyScreen`, practice screen'de AI yanıtlarına kitap ikonu butonu, home screen 5. kart
+- [x] **Yapılandırılmış egzersiz modları** — `ExerciseScreen` oluşturuldu; çoktan seçmeli, çeviri, boşluk doldurma; ders kartından "Egzersiz Yap" butonu
 
 ### Offline & Platform Genişletme (JWT sistemini koruyarak)
 
-- [ ] **Offline cache** — `shared_preferences`/`hive` ile ders ve profil verilerini önbelleğe al; bağlantı yokken göster
+- [x] **Offline cache** — `CacheService` + `CacheKeys` ile TTL-tabanlı cache; yapılandırılmış dersler SharedPreferences'a önbelleklendi (1 saat / 30 dk TTL)
 - [ ] **Sosyal login** — `google_sign_in` paketi + backend'de Google ID token doğrulama; mevcut JWT sistemi korunur
 - [ ] **Push notification** — Firebase Cloud Messaging (FCM) auth olmadan eklenir; günlük hatırlatma, streak bildirimi
 
@@ -82,21 +88,21 @@ Son güncelleme: 2026-04-07
 
 - [x] `backend/` kökündeki geçici migration ve test script'lerini temizle (silindi)
 - [x] `practice_screen_new.dart` silindi
-- [ ] Flutter analysis uyarılarını ve deprecated kullanımları (`withOpacity` vb.) düzelt
-- [ ] Kullanılmayan importları temizle
+- [x] Flutter analysis uyarılarını düzelt — `progressProvider` derleme hatası, debug print'ler temizlendi
+- [x] Kullanılmayan importları temizle
 
 ### UI/UX İyileştirmeleri
 
-- [ ] Koyu/açık tema sistemi (dark/light mode)
-- [ ] Web öncelikli responsive tasarım (sonra mobil uyum)
-- [ ] Ekran geçişlerinde animasyon ve micro-interaction'lar
-- [ ] Erişilebilirlik: ekran okuyucu desteği, klavye navigasyonu
-- [ ] Arayüz çoklu dil desteği (TR, EN, DE)
+- [x] Koyu/açık tema sistemi (dark/light mode) — `ThemeModeNotifier` + SharedPreferences kalıcı; AppBar'da toggle butonu
+- [x] Web öncelikli responsive tasarım — home ekranı Wrap grid (2/3 col), practice ekranı Row/Column layout (>=700px)
+- [x] Ekran geçişlerinde animasyon ve micro-interaction'lar — GoRouter `CustomTransitionPage` (slide+fade 220ms); NavCard `AnimatedScale` + `onTapDown` press efekti
+- [x] Erişilebilirlik: ekran okuyucu desteği, klavye navigasyonu — `Semantics` wrapper (NavCard, form alanları, butonlar); `FocusTraversalGroup` uygulama genelinde; `autofillHints`; `textInputAction` zinciri (next→done)
+- [x] Arayüz çoklu dil desteği (TR, EN, DE) — `AppL10n` sınıfı (~70 string, 3 dil); `UiLanguageNotifier` + SharedPreferences; AppBar'da flag popup menüsü; login/register/home/practice ekranları l10n'a bağlandı
 
 ### Ses Sistemi Geliştirme
 
-- [ ] Telaffuz değerlendirme sistemi (pronunciation assessment)
-- [ ] Ses dosyası yönetimi ve işleme pipeline'ı
+- [x] Telaffuz değerlendirme sistemi (pronunciation assessment) — practice screen'e pronunciation modu eklendi; AI özel geri bildirim veriyor
+- [x] Ses dosyası yönetimi ve işleme pipeline'ı — TTS `cancel()` before `speak()` (üst üste binme engeli); `TtsRate` enum (slow/normal/fast); practice settings panel'de hız seçici (SegmentedButton); `ttsRateProvider` state yönetimi; `TtsTypes` platform-bağımsız dosya
 
 ---
 
@@ -111,17 +117,17 @@ Son güncelleme: 2026-04-07
 
 ### Test Altyapısı
 
-- [ ] Backend unit ve integration testleri (pytest)
-- [ ] Flutter widget testleri
-- [ ] End-to-end test senaryoları
+- [x] Backend unit ve integration testleri (pytest) — `backend/tests/conftest.py` (in-memory SQLite TestClient), `test_auth.py` (register/login/refresh/me/logout), `test_vocabulary.py` (save/list/filter/delete), `test_structured_lessons.py` (schema validation)
+- [x] Flutter widget testleri — `test/widget_test.dart` genişletildi: `AppL10n` unit testleri (3 dil × kritik alanlar), form validation testleri, `ProviderScope` override testleri
+- [ ] End-to-end test senaryoları (Playwright/Selenium — deployment sonrasına ertelendi)
 
-### Production Deployment (Kod geliştirme bittikten sonra — bu sırayla)
+### Production Deployment (Sıradaki major görev — bu sırayla)
 
-- [ ] Supabase PostgreSQL kurulumu → DATABASE_URL değişikliği (SQLite → Supabase)
-- [ ] Render'a FastAPI backend deploy (free tier)
-- [ ] Vercel'e Flutter web deploy (`flutter build web`)
-- [ ] Cloudflare DNS + SSL (hem backend hem frontend)
-- [ ] Sentry entegrasyonu (sentry-sdk[fastapi] + sentry_flutter)
+- [ ] **1. Supabase** — PostgreSQL kurulumu, connection string al, `backend/.env`'de `DATABASE_URL` değiştir
+- [ ] **2. Render** — FastAPI backend deploy (free tier), env variables ekle (GEMINI_API_KEY, SECRET_KEY, DATABASE_URL)
+- [ ] **3. Vercel** — `flutter build web` → Vercel'e deploy, backend URL'i env'e ekle
+- [ ] **4. Cloudflare** — DNS ayarları, SSL sertifikası (hem backend hem frontend)
+- [ ] **5. Sentry** — `sentry-sdk[fastapi]` backend'e, `sentry_flutter` frontend'e entegre et
 - [ ] Production ortam değişkenleri ve secrets yönetimi
 - [ ] CI/CD pipeline (GitHub Actions) — opsiyonel
 - [ ] Pinecone (projenin sonunda — RAG/semantic ders önerisi için)

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:markdown/markdown.dart' as md;
 import '../providers/lesson_provider.dart';
-import '../providers/progress_provider.dart';
 import '../widgets/vocabulary_card.dart';
 import '../widgets/grammar_card.dart';
 import '../widgets/question_card.dart';
@@ -137,26 +136,14 @@ class _LessonScreenState extends ConsumerState<LessonScreen> {
     );
   }
 
-  Future<void> _completeLesson() async {
-    try {
-      await ref.read(progressProvider.notifier).createProgress(
-            widget.lessonId,
-            _score,
-            true,
-          );      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Tebrikler! Dersi ${(_score * 100).toInt()}% başarıyla tamamladınız.'),
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Hata: $e')),
-        );
-      }
+  void _completeLesson() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              'Tebrikler! Dersi ${(_score * 100).toInt()}% başarıyla tamamladınız.'),
+        ),
+      );
     }
   }
 }

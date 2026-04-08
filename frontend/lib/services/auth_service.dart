@@ -6,6 +6,7 @@ import '../models/user.dart';
 
 class AuthService {
   static const _tokenKey = 'auth_token';
+  static const _refreshTokenKey = 'refresh_token';
   final _storage = const FlutterSecureStorage();
 
   String get _authBase => AppConfig.baseUrl;
@@ -38,6 +39,13 @@ class AuthService {
     };
   }
 
+  Future<void> _saveTokens(String token, String? refreshToken) async {
+    await _storage.write(key: _tokenKey, value: token);
+    if (refreshToken != null) {
+      await _storage.write(key: _refreshTokenKey, value: refreshToken);
+    }
+  }
+
   Future<({User user, String token})> signIn(String email, String password) async {
     final data = await _post('/auth/login', {
       'email': email,
@@ -46,7 +54,8 @@ class AuthService {
 
     final user = User.fromJson(_normalizeUser(data['user'] as Map<String, dynamic>));
     final token = data['token'] as String;
-    await _storage.write(key: _tokenKey, value: token);
+    final refreshToken = data['refresh_token'] as String?;
+    await _saveTokens(token, refreshToken);
     return (user: user, token: token);
   }
 
@@ -63,12 +72,14 @@ class AuthService {
 
     final user = User.fromJson(_normalizeUser(data['user'] as Map<String, dynamic>));
     final token = data['token'] as String;
-    await _storage.write(key: _tokenKey, value: token);
+    final refreshToken = data['refresh_token'] as String?;
+    await _saveTokens(token, refreshToken);
     return (user: user, token: token);
   }
 
   Future<void> signOut() async {
     await _storage.delete(key: _tokenKey);
+    await _storage.delete(key: _refreshTokenKey);
   }
 
   Future<String?> getToken() async {
@@ -80,8 +91,33 @@ class AuthService {
     return token != null && token.isNotEmpty;
   }
 
+  /// Refresh token ile yeni access token alır.
+  /// Başarılıysa yeni token'ı kaydeder ve döndürür. Başarısızsa null döner.
+  Future<String?> refreshAccessToken() async {
+    final refreshToken = await _storage.read(key: _refreshTokenKey);
+    if (refreshToken == null || refreshToken.isEmpty) return null;
+
+    try {
+      final response = await http.post(
+        Uri.parse('$_authBase/auth/refresh'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'refresh_token': refreshToken}),
+      );
+
+      if (response.statusCode != 200) return null;
+
+      final data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      final newToken = data['token'] as String;
+      final newRefresh = data['refresh_token'] as String?;
+      await _saveTokens(newToken, newRefresh ?? refreshToken);
+      return newToken;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Saklı token ile mevcut kullanıcıyı getirir.
-  /// Token yoksa veya geçersizse null döner.
+  /// Token geçersizse refresh dener. Hâlâ başarısızsa null döner.
   Future<User?> getMe() async {
     final token = await _storage.read(key: _tokenKey);
     if (token == null || token.isEmpty) return null;
@@ -94,13 +130,34 @@ class AuthService {
       },
     );
 
-    if (response.statusCode == 401 || response.statusCode == 404) {
-      await _storage.delete(key: _tokenKey); // geçersiz token, temizle
-      return null;
+    if (response.statusCode == 200) {
+      final data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+      return User.fromJson(_normalizeUser(data['user'] as Map<String, dynamic>));
     }
-    if (response.statusCode >= 400) return null;
 
-    final data = json.decode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
-    return User.fromJson(_normalizeUser(data['user'] as Map<String, dynamic>));
+    // 401: token süresi dolmuş, refresh dene
+    if (response.statusCode == 401) {
+      final newToken = await refreshAccessToken();
+      if (newToken == null) {
+        await signOut();
+        return null;
+      }
+      // Yeni token ile tekrar dene
+      final retry = await http.get(
+        Uri.parse('$_authBase/auth/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $newToken',
+        },
+      );
+      if (retry.statusCode != 200) {
+        await signOut();
+        return null;
+      }
+      final data = json.decode(utf8.decode(retry.bodyBytes)) as Map<String, dynamic>;
+      return User.fromJson(_normalizeUser(data['user'] as Map<String, dynamic>));
+    }
+
+    return null;
   }
 }

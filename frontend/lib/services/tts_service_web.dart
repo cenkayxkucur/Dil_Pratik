@@ -1,8 +1,14 @@
 // Web-specific Text-to-Speech service
 // ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:js' as js;
+import 'tts_types.dart';
+
+export 'tts_types.dart' show TtsRate;
 
 class TtsServicePlatform {
+  /// Konuşma hızı — dışarıdan ayarlanabilir.
+  TtsRate rate = TtsRate.normal;
+
   bool get isSupported {
     try {
       return js.context.hasProperty('speechSynthesis');
@@ -14,6 +20,7 @@ class TtsServicePlatform {
   void speak({
     required String text,
     required String language,
+    TtsRate? speechRate,
     Function()? onStart,
     Function()? onEnd,
     Function(String)? onError,
@@ -23,11 +30,14 @@ class TtsServicePlatform {
       return;
     }
 
+    // Önceki konuşmayı durdur — üst üste binmeyi engeller
+    _cancelSafely();
+
     try {
       final utterance = js.context.callMethod('eval', ['new SpeechSynthesisUtterance()']);
       utterance['text'] = text;
       utterance['lang'] = _getLanguageCode(language);
-      utterance['rate'] = 0.9; // Slightly slower for language learning
+      utterance['rate'] = (speechRate ?? rate).value;
       utterance['pitch'] = 1.0;
       utterance['volume'] = 1.0;
 
@@ -56,14 +66,14 @@ class TtsServicePlatform {
     }
   }
 
+  void _cancelSafely() {
+    try {
+      js.context['speechSynthesis'].callMethod('cancel');
+    } catch (_) {}
+  }
+
   void stop() {
-    if (isSupported) {
-      try {
-        js.context['speechSynthesis'].callMethod('cancel');
-      } catch (e) {
-        // Ignore errors when stopping
-      }
-    }
+    if (isSupported) _cancelSafely();
   }
 
   bool get isSpeaking {

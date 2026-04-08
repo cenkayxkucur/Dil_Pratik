@@ -256,3 +256,49 @@ class UserLearningProfile(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "language", name="uq_profile_user_lang"),
     )
+
+
+class UserStreak(Base):
+    """
+    Kullanıcının günlük çalışma serisi ve günlük hedef takibi.
+    current_streak: Bugün dahil ardışık aktif gün sayısı
+    longest_streak: Tüm zamanların en uzun serisi
+    last_activity_date: Son aktivite tarihi (YYYY-MM-DD)
+    total_days_active: Toplam aktif gün sayısı
+    daily_goal_target: Günlük hedef etkileşim sayısı
+    """
+    __tablename__ = "user_streaks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, index=True)
+    language = Column(String, nullable=False)
+    current_streak = Column(Integer, default=0)
+    longest_streak = Column(Integer, default=0)
+    last_activity_date = Column(String, nullable=True)  # "YYYY-MM-DD"
+    total_days_active = Column(Integer, default=0)
+    daily_goal_target = Column(Integer, default=5)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "language", name="uq_streak_user_lang"),
+    )
+
+
+class SavedWord(Base):
+    """
+    Kullanıcının kaydettiği kelimeler (Kelime Defteri).
+    Pratik veya ders sırasında manuel olarak kaydedilir.
+    """
+    __tablename__ = "saved_words"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, index=True)
+    language = Column(String, nullable=False)
+    word = Column(String, nullable=False)
+    translation = Column(String, nullable=True)   # Kullanıcının eklediği çeviri/not
+    context = Column(Text, nullable=True)          # Kaydedildiği cümle/bağlam
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "word", "language", name="uq_saved_word_user_lang"),
+    )

@@ -32,6 +32,7 @@ Dil_Pratik/
 ## Teknoloji Stack
 
 ### Backend
+
 - **FastAPI** (Python) — REST API
 - **SQLAlchemy** + **PostgreSQL** — ORM ve veritabanı
 - **Google Gemini 1.5 Flash** — AI dil modeli (OpenAI'dan migrate edildi)
@@ -39,6 +40,7 @@ Dil_Pratik/
 - **Google Cloud TTS** — Metin okuma servisi
 
 ### Frontend
+
 - **Flutter** — Web + iOS + Android çapraz platform
 - **Riverpod** (hooks_riverpod) — State yönetimi
 - **GoRouter** — Navigasyon
@@ -48,14 +50,14 @@ Dil_Pratik/
 
 ## API Yapısı
 
-| Prefix | Router | Açıklama |
-|---|---|---|
-| `/api/ai` | ai_endpoints | Chat, gramer analizi, ders sohbeti |
-| `/api/lessons` | lesson_endpoints | Ders CRUD |
-| `/api/v2` | structured_lesson_endpoints | Yapılandırılmış ders sistemi |
-| `/api/conversation` | conversation_endpoints | Konuşma geçmişi |
-| `/api/grammar` | grammar_endpoints | Gramer konuları |
-| `/` | auth_endpoints | JWT auth (register/login) |
+| Prefix              | Router                      | Açıklama                           |
+| ------------------- | --------------------------- | ---------------------------------- |
+| `/api/ai`           | ai_endpoints                | Chat, gramer analizi, ders sohbeti |
+| `/api/lessons`      | lesson_endpoints            | Ders CRUD                          |
+| `/api/v2`           | structured_lesson_endpoints | Yapılandırılmış ders sistemi       |
+| `/api/conversation` | conversation_endpoints      | Konuşma geçmişi                    |
+| `/api/grammar`      | grammar_endpoints           | Gramer konuları                    |
+| `/`                 | auth_endpoints              | JWT auth (register/login)          |
 
 ## Desteklenen Diller & Seviyeler
 
@@ -74,6 +76,7 @@ Dil_Pratik/
 ## Geliştirme Ortamı
 
 ### Backend başlatma
+
 ```bash
 cd backend
 # venv aktif et
@@ -81,6 +84,7 @@ uvicorn main:app --reload --port 8000
 ```
 
 ### Frontend başlatma
+
 ```bash
 cd frontend
 flutter run -d web
@@ -88,8 +92,10 @@ flutter run -d web
 ```
 
 ### Ortam Değişkenleri (`backend/.env`)
+
 ```
 GEMINI_API_KEY=...
-DATABASE_URL=postgresql://user:pass@localhost/dil_pratik
+DATABASE_URL=postgresql://...
 SECRET_KEY=...
 ```
+<!-- Gerçek değerler .env dosyasında, asla commit'e gitmez -->

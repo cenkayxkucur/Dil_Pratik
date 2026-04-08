@@ -202,6 +202,7 @@ class ApiService {
     required String level,
     required String userId,
     String? communicationLanguage,
+    String sessionType = 'conversation',
   }) async {
     try {
       final data = {
@@ -209,8 +210,9 @@ class ApiService {
         'language': language,
         'level': level,
         'user_id': userId,
+        'session_type': sessionType,
       };
-      
+
       // Add communication language if provided
       if (communicationLanguage != null) {
         data['communication_language'] = communicationLanguage;
@@ -279,10 +281,11 @@ class ApiService {
   }
   // New method to support the practice screen with enhanced parameters
   static Future<String> getChatResponse(
-    String message, 
+    String message,
     Language? selectedLanguage, {
     LanguageLevel? level,
     Language? communicationLanguage,
+    String sessionType = 'conversation',
   }) async {
     try {
       final apiService = ApiService();
@@ -290,8 +293,9 @@ class ApiService {
         message: message,
         language: selectedLanguage?.code ?? 'turkish',
         level: level?.name ?? 'A1',
-        userId: UserSessionService.getCurrentUserId(), // Uses auth user ID if authenticated, session ID if anonymous
+        userId: UserSessionService.getCurrentUserId(),
         communicationLanguage: communicationLanguage?.code,
+        sessionType: sessionType,
       );
 
       if (response['success'] == true) {

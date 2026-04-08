@@ -44,6 +44,18 @@ final activityProvider =
 );
 
 // ──────────────────────────────────────────────────────────────
+// Streak & günlük hedef
+// ──────────────────────────────────────────────────────────────
+
+final streakProvider = FutureProvider.family<StreakData, String>(
+  (ref, language) async {
+    final service = ref.watch(progressServiceProvider);
+    final userId = UserSessionService.getCurrentUserId();
+    return service.getStreak(userId, language);
+  },
+);
+
+// ──────────────────────────────────────────────────────────────
 // Tekrar kuyruğu (spaced repetition + zayıf alanlar)
 // ──────────────────────────────────────────────────────────────
 

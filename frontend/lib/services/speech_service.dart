@@ -57,7 +57,6 @@ class SpeechService {
     
     _timeoutTimer = Timer(Duration(seconds: effectiveMaxTimeout), () {
       if (_isListening) {
-        print('🔇 Speech recognition timeout reached (${effectiveMaxTimeout}s)');
         stopListening();
         onError?.call('Speech recognition timeout - maksimum dinleme süresi aşıldı');
       }
@@ -84,22 +83,20 @@ class SpeechService {
         _recognition['lang'] = _getLanguageCode(language);
         _recognition['maxAlternatives'] = 1;        // Set event handlers
         _recognition['onresult'] = js.allowInterop((event) {
-          print('🎤 Speech recognition onresult triggered!');
           try {
             if (event == null) return;
-            
-            // Convert to JsObject to properly access properties
+
             final jsEvent = js.JsObject.fromBrowserObject(event);
             final results = jsEvent['results'];
             if (results == null) return;
-            
+
             final jsResults = js.JsObject.fromBrowserObject(results);
             final length = jsResults['length'];
             if (length == null || length == 0) return;
-            
+
             final lastResult = jsResults[length - 1];
             if (lastResult == null) return;
-            
+
             final jsLastResult = js.JsObject.fromBrowserObject(lastResult);
             final isFinal = jsLastResult['isFinal'];
             if (isFinal == true) {
@@ -112,7 +109,6 @@ class SpeechService {
                   if (transcript != null) {
                     final transcriptText = transcript.toString().trim();
                     if (transcriptText.isNotEmpty) {
-                      print('🎯 Calling onResult with: "$transcriptText"');
                       _onResult?.call(transcriptText);
                     }
                   }
@@ -120,7 +116,6 @@ class SpeechService {
               }
             }
           } catch (e) {
-            print('Error in speech recognition: $e');
             _onError?.call('Error processing speech result: $e');
           }
         });        _recognition['onerror'] = js.allowInterop((event) {
