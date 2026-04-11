@@ -19,10 +19,14 @@ import app.models.models  # noqa: F401
 # Sentry — DSN yoksa devre dışı
 _sentry_dsn = os.getenv("SENTRY_DSN", "")
 if _sentry_dsn:
+    from sentry_sdk.integrations.fastapi import FastApiIntegration
+    from sentry_sdk.integrations.starlette import StarletteIntegration
     sentry_sdk.init(
         dsn=_sentry_dsn,
         traces_sample_rate=0.1,
         environment=os.getenv("ENVIRONMENT", "production"),
+        integrations=[StarletteIntegration(), FastApiIntegration()],
+        send_default_pii=False,
     )
 
 app = FastAPI(

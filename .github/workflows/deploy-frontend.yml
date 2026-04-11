@@ -32,7 +32,8 @@ jobs:
           cd frontend
           flutter build web --release \
             --dart-define=BASE_URL=https://dil-pratik.onrender.com \
-            --dart-define=API_BASE_URL=https://dil-pratik.onrender.com/api
+            --dart-define=API_BASE_URL=https://dil-pratik.onrender.com/api \
+            --dart-define=SENTRY_DSN=${{ secrets.SENTRY_FLUTTER_DSN }}
 
       - name: Copy vercel.json to build output
         run: cp frontend/vercel.json frontend/build/web/vercel.json

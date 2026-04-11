@@ -14,4 +14,4 @@ google-cloud-texttospeech==2.27.0
 pydantic==1.10.21
 pytest==8.4.0
 httpx==0.28.1
-sentry-sdk==1.39.1
+sentry-sdk[fastapi]==1.39.1
