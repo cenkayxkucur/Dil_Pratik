@@ -15,7 +15,7 @@ from sqlalchemy.orm import sessionmaker
 from main import app
 from app.database import get_db
 from app.utils.database import Base
-import app.models.models  # noqa: F401 — modelleri Base'e kaydet
+from app.models import models as _models  # noqa: F401 — modelleri Base'e kaydet
 
 # In-memory SQLite (testler arası izole)
 SQLALCHEMY_TEST_URL = "sqlite:///:memory:"
