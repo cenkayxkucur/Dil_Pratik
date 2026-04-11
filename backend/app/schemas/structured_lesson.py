@@ -15,7 +15,7 @@ class LanguageLevelResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # Grammar Topic Schemas  
@@ -29,7 +29,7 @@ class GrammarTopicResponse(BaseModel):
     created_at: datetime
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # Lesson Schemas
@@ -46,7 +46,7 @@ class LessonResponse(BaseModel):
     updated_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 
 # Combined Response Schemas

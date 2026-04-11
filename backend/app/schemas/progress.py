@@ -18,4 +18,4 @@ class ProgressResponse(BaseModel):
     updatedAt: Optional[str] = None
 
     class Config:
-        from_attributes = True
+        orm_mode = True
