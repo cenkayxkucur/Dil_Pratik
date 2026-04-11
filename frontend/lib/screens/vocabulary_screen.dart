@@ -214,7 +214,7 @@ class _WordTile extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: Colors.teal.withValues(alpha: 0.1),
+          color: Colors.teal.withOpacity(0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: const Icon(Icons.translate, color: Colors.teal, size: 22),

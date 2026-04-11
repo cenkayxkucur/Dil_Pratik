@@ -39,7 +39,7 @@ class LanguageSelector extends StatelessWidget {
                   onLanguageSelected(language);
                 }
               },
-              selectedColor: Colors.blue.withValues(alpha: 0.2),
+              selectedColor: Colors.blue.withOpacity(0.2),
               checkmarkColor: Colors.blue,
             ),
           );

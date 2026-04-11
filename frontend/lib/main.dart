@@ -165,7 +165,7 @@ class MyApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider);
 
     return FocusTraversalGroup(
-      policy: const AppFocusTraversalPolicy(),
+      policy: AppFocusTraversalPolicy(),
       child: MaterialApp.router(
         title: 'Dil Pratik',
         themeMode: themeMode,

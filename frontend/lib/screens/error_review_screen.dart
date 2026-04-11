@@ -204,7 +204,7 @@ class _SectionHeader extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
+            color: color.withOpacity(0.12),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
@@ -248,7 +248,7 @@ class _WordChipGrid extends StatelessWidget {
                       color: Colors.white, fontWeight: FontWeight.w600),
                 ),
                 backgroundColor:
-                    color.withValues(alpha: intensity.clamp(0.0, 1.0)),
+                    color.withOpacity(intensity.clamp(0.0, 1.0)),
               ),
             );
           }).toList(),
@@ -348,7 +348,7 @@ class _Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

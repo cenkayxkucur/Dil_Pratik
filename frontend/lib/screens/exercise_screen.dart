@@ -307,9 +307,9 @@ class _MultipleChoiceCardState extends State<_MultipleChoiceCard> {
               Color? tileColor;
               if (_answered) {
                 if (opt == widget.exercise.correctAnswer) {
-                  tileColor = Colors.green.withValues(alpha: 0.15);
+                  tileColor = Colors.green.withOpacity(0.15);
                 } else if (opt == _selected) {
-                  tileColor = Colors.red.withValues(alpha: 0.1);
+                  tileColor = Colors.red.withOpacity(0.1);
                 }
               }
               return Container(
@@ -320,7 +320,7 @@ class _MultipleChoiceCardState extends State<_MultipleChoiceCard> {
                   border: Border.all(
                     color: _answered && opt == widget.exercise.correctAnswer
                         ? Colors.green
-                        : Colors.grey.withValues(alpha: 0.3),
+                        : Colors.grey.withOpacity(0.3),
                   ),
                 ),
                 child: RadioListTile<String>(
@@ -338,8 +338,8 @@ class _MultipleChoiceCardState extends State<_MultipleChoiceCard> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _selected == widget.exercise.correctAnswer
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.red.withValues(alpha: 0.1),
+                      ? Colors.green.withOpacity(0.1)
+                      : Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -456,8 +456,8 @@ class _FillBlankCardState extends State<_FillBlankCard> {
                       filled: _answered,
                       fillColor: _answered
                           ? (_correct
-                              ? Colors.green.withValues(alpha: 0.15)
-                              : Colors.red.withValues(alpha: 0.1))
+                              ? Colors.green.withOpacity(0.15)
+                              : Colors.red.withOpacity(0.1))
                           : null,
                     ),
                     onSubmitted: (_answered) ? null : (_) => _check(),
@@ -480,8 +480,8 @@ class _FillBlankCardState extends State<_FillBlankCard> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _correct
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.red.withValues(alpha: 0.1),
+                      ? Colors.green.withOpacity(0.1)
+                      : Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text(
@@ -566,9 +566,9 @@ class _TranslationCardState extends State<_TranslationCard> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.teal.withValues(alpha: 0.08),
+                color: Colors.teal.withOpacity(0.08),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.teal.withValues(alpha: 0.2)),
+                border: Border.all(color: Colors.teal.withOpacity(0.2)),
               ),
               child: Text(
                 widget.exercise.sourceText,
@@ -597,8 +597,8 @@ class _TranslationCardState extends State<_TranslationCard> {
                 filled: _answered,
                 fillColor: _answered
                     ? (_correct
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : Colors.red.withValues(alpha: 0.08))
+                        ? Colors.green.withOpacity(0.1)
+                        : Colors.red.withOpacity(0.08))
                     : null,
               ),
             ),
@@ -608,8 +608,8 @@ class _TranslationCardState extends State<_TranslationCard> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                   color: _correct
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.orange.withValues(alpha: 0.1),
+                      ? Colors.green.withOpacity(0.1)
+                      : Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(
@@ -740,9 +740,9 @@ class _ExerciseTypeChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Text(
         label,

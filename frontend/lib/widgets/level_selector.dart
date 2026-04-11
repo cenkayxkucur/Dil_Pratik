@@ -34,9 +34,9 @@ class LevelSelector extends StatelessWidget {
                   onLevelSelected(level);
                 }
               },
-              selectedColor: _getLevelColor(level).withValues(alpha: 0.3),
+              selectedColor: _getLevelColor(level).withOpacity(0.3),
               checkmarkColor: _getLevelColor(level),
-              backgroundColor: _getLevelColor(level).withValues(alpha: 0.1),
+              backgroundColor: _getLevelColor(level).withOpacity(0.1),
               side: BorderSide(
                 color: _getLevelColor(level),
                 width: isSelected ? 2 : 1,

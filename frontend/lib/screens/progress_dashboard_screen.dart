@@ -410,7 +410,7 @@ class _WeakVocabCard extends StatelessWidget {
                 return Chip(
                   label: Text(w.word),
                   backgroundColor:
-                      Colors.red.withValues(alpha: opacity.clamp(0.0, 1.0)),
+                      Colors.red.withOpacity(opacity.clamp(0.0, 1.0)),
                   labelStyle: const TextStyle(color: Colors.white),
                 );
               }).toList(),
@@ -501,7 +501,7 @@ class _TopicsCard extends StatelessWidget {
                   .map((t) => Chip(
                         label: Text(t),
                         backgroundColor:
-                            Colors.purple.withValues(alpha: 0.12),
+                            Colors.purple.withOpacity(0.12),
                       ))
                   .toList(),
             ),

@@ -70,5 +70,5 @@ String flagForLang(String code) {
 /// Klavye navigasyonu için tüm uygulama focus sıralamasını yöneten traversal policy.
 /// Web platformunda klavye ile Tab tuşu ile gezinmeyi destekler.
 class AppFocusTraversalPolicy extends ReadingOrderTraversalPolicy {
-  const AppFocusTraversalPolicy();
+  AppFocusTraversalPolicy();
 }

@@ -50,8 +50,8 @@ class _QuestionCardState extends State<QuestionCard> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(                  color: _selectedAnswer == widget.question.correctAnswer
-                      ? Colors.green.withValues(alpha: 0.1)
-                      : Colors.red.withValues(alpha: 0.1),
+                      ? Colors.green.withOpacity(0.1)
+                      : Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(

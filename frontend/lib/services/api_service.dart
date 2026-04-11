@@ -304,7 +304,7 @@ class ApiService {
         throw Exception('AI chat failed');
       }
     } catch (e) {
-      throw _handleError(e);
+      throw e is Exception ? e : Exception(e.toString());
     }
   }
 

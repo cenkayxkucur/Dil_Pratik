@@ -444,7 +444,7 @@ class _NavCardState extends State<_NavCard> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: widget.item.color.withValues(alpha: 0.12),
+                      color: widget.item.color.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child:

@@ -129,10 +129,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.deepPurple.withValues(alpha: 0.1),
+                color: Colors.deepPurple.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: Colors.deepPurple.withValues(alpha: 0.3)),
+                    color: Colors.deepPurple.withOpacity(0.3)),
               ),
               child: Row(
                 children: [
